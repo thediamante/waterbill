@@ -575,6 +575,7 @@
       </svg>
     </div>
     <h1>Water Bill Calculator</h1>
+    <p>Divide your water bill fairly across all households</p>
     <a href="history.html" style="display:inline-flex;align-items:center;gap:6px;margin-top:0.75rem;font-size:0.8rem;color:var(--text-secondary);text-decoration:none;border:1px solid var(--navy-border);padding:5px 12px;border-radius:20px;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--teal)';this.style.color='var(--teal)'" onmouseout="this.style.borderColor='var(--navy-border)';this.style.color='var(--text-secondary)'">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
       View history
@@ -1054,9 +1055,9 @@ function saveAsImage() {
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
-  html,body{background:#0d1b2a;color:#e8f0f7;font-family:'DM Sans',sans-serif;padding:32px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-  @page{margin:1cm;size:A4;}
-  @media print{html,body{padding:0;}}
+  html,body{background:#0d1b2a;color:#e8f0f7;font-family:'DM Sans',sans-serif;padding:28px 36px;-webkit-print-color-adjust:exact;print-color-adjust:exact;min-height:100vh;display:flex;flex-direction:column;}
+  @page{margin:0;size:A4;}
+  @media print{html,body{padding:24px 32px;}}
   .card{background:#1a2d40;border:1px solid #243d54;border-radius:14px;margin-bottom:14px;overflow:hidden;}
   .card-inner{padding:1.25rem;}
   .section-label{font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#2ec4b6;margin-bottom:12px;}
@@ -1122,6 +1123,8 @@ function saveAsImage() {
     </table>
   </div>
 </div>
+
+<div style="flex:1;"></div>
 
 </body>
 </html>`);
