@@ -562,6 +562,10 @@
     </div>
     <h1>Water Bill Calculator</h1>
     <p>Divide your water bill fairly across all households</p>
+    <a href="history.html" style="display:inline-flex;align-items:center;gap:6px;margin-top:0.75rem;font-size:0.8rem;color:var(--text-secondary);text-decoration:none;border:1px solid var(--navy-border);padding:5px 12px;border-radius:20px;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--teal)';this.style.color='var(--teal)'" onmouseout="this.style.borderColor='var(--navy-border)';this.style.color='var(--text-secondary)'">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+      View history
+    </a>
   </header>
 
   <!-- ===== INPUTS ===== -->
@@ -917,6 +921,21 @@ function calculate() {
   totTr.innerHTML = `<td>Total</td><td style="font-family:'JetBrains Mono',monospace">${grandTotal} m³</td><td><span class="pct-badge">100.00%</span></td><td class="amount-strong">${fmtPhp(billPhp)}</td>`;
   cTb.appendChild(totTr);
 
+  // Save to history
+  saveToHistory({
+    id: Date.now(),
+    date: new Date().toISOString(),
+    billCbm, billPhp, meterTotal, mainCons, grandTotal,
+    cons: {...consAll},
+    pct: {...pct},
+    amts: {...amts},
+    readings: {
+      waldy:  { prev: getMeter('wrap-waldy-prev'),  prevLast: getLastDigit('wrap-waldy-prev'),  curr: getMeter('wrap-waldy-curr'),  currLast: getLastDigit('wrap-waldy-curr')  },
+      pauline:{ prev: getMeter('wrap-pauline-prev'), prevLast: getLastDigit('wrap-pauline-prev'), curr: getMeter('wrap-pauline-curr'), currLast: getLastDigit('wrap-pauline-curr') },
+      nicka:  { prev: getMeter('wrap-nicka-prev'),  prevLast: getLastDigit('wrap-nicka-prev'),  curr: getMeter('wrap-nicka-curr'),  currLast: getLastDigit('wrap-nicka-curr')  }
+    }
+  });
+
   document.getElementById('inputs').style.display = 'none';
   document.getElementById('report').classList.add('visible');
   window.scrollTo({top:0, behavior:'smooth'});
@@ -939,6 +958,13 @@ function resetForm() {
   btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg> Save as last month's readings`;
   loadSavedReadings();
   window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function saveToHistory(record) {
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem('wbc_history') || '[]'); } catch(e) {}
+  history.unshift(record);
+  localStorage.setItem('wbc_history', JSON.stringify(history));
 }
 
 function saveReadings() {
