@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bill History</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0d1b2a;--navy-mid:#152334;--navy-card:#1a2d40;--navy-border:#243d54;--teal:#2ec4b6;--teal-glow:rgba(46,196,182,0.12);--amber:#ffbf69;--red:#e05a5a;--red-bg:rgba(224,90,90,0.12);--text-primary:#e8f0f7;--text-secondary:#7da0bb;--text-muted:#4a6b82;--white:#ffffff;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text-primary);min-height:100vh;padding:2rem 1rem 4rem;}
+body::before{content:'';position:fixed;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(46,196,182,0.06) 0%,transparent 70%);pointer-events:none;}
+.app{max-width:780px;margin:0 auto;}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;animation:fadeUp 0.4s ease both;flex-wrap:wrap;gap:1rem;}
+.page-header-left{display:flex;flex-direction:column;gap:4px;}
+.back-link{display:inline-flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--text-muted);text-decoration:none;margin-bottom:0.5rem;transition:color 0.2s;}
+.back-link:hover{color:var(--teal);}
+.page-title{font-family:'DM Serif Display',serif;font-size:1.8rem;color:var(--white);}
+.page-subtitle{font-size:0.82rem;color:var(--text-secondary);}
+.record-count{font-size:0.78rem;color:var(--text-muted);background:var(--navy-card);border:1px solid var(--navy-border);border-radius:20px;padding:5px 14px;font-family:'JetBrains Mono',monospace;}
+.add-btn{width:100%;height:48px;border:1px dashed var(--navy-border);border-radius:12px;background:transparent;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:0.88rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;margin-bottom:1.25rem;animation:fadeUp 0.4s 0.05s ease both;}
+.add-btn:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-glow);}
+.entry-form{background:var(--navy-card);border:1px solid rgba(46,196,182,0.3);border-radius:16px;margin-bottom:1.25rem;overflow:hidden;animation:fadeUp 0.3s ease both;}
+.entry-form-header{padding:1rem 1.25rem;border-bottom:1px solid var(--navy-border);display:flex;align-items:center;justify-content:space-between;}
+.entry-form-title{font-size:0.85rem;font-weight:500;color:var(--teal);}
+.entry-form-close{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem;line-height:1;padding:2px 6px;border-radius:4px;transition:all 0.15s;}
+.entry-form-close:hover{background:var(--red-bg);color:var(--red);}
+.form-section{padding:1.1rem 1.25rem;border-bottom:1px solid var(--navy-border);}
+.form-section:last-of-type{border-bottom:none;}
+.form-section-label{font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);margin-bottom:0.9rem;}
+.date-wrap{display:flex;flex-direction:column;gap:6px;max-width:260px;}
+.date-wrap label{font-size:0.72rem;font-weight:500;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted);}
+.date-wrap input[type="date"]{height:40px;border:1px solid var(--navy-border);border-radius:10px;background:var(--navy-mid);color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:0.9rem;padding:0 12px;outline:none;transition:border-color 0.2s;color-scheme:dark;}
+.date-wrap input[type="date"]:focus{border-color:var(--teal);}
+.hh-block{margin-bottom:1.1rem;}
+.hh-block:last-child{margin-bottom:0;}
+.hh-name{font-size:0.95rem;font-weight:500;color:var(--white);margin-bottom:0.6rem;}
+.meter-row{display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap;}
+.meter-group{display:flex;flex-direction:column;gap:5px;}
+.meter-lbl{font-size:0.7rem;font-weight:500;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted);}
+.meter-wrap{display:flex;border:1px solid var(--navy-border);border-radius:10px;overflow:hidden;background:var(--navy-mid);transition:border-color 0.2s;}
+.meter-wrap:focus-within{border-color:var(--teal);box-shadow:0 0 0 3px rgba(46,196,182,0.1);}
+.digit{width:36px;height:40px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:600;border:none;border-right:1px solid var(--navy-border);background:transparent;color:var(--text-primary);outline:none;}
+.digit:last-child{border-right:none;}
+.digit:focus{background:rgba(46,196,182,0.06);}
+.digit.red-digit{color:var(--red);background:var(--red-bg);}
+.digit.red-digit:focus{background:rgba(224,90,90,0.18);}
+.cons-display{display:flex;flex-direction:column;gap:3px;}
+.cons-val{font-size:1.3rem;font-weight:600;color:var(--teal);font-family:'JetBrains Mono',monospace;}
+.cons-val.dash{color:var(--text-muted);font-size:1rem;}
+.cons-unit{font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;}
+.err-msg{font-size:0.76rem;color:var(--red);margin-top:5px;display:none;padding:5px 9px;background:var(--red-bg);border-radius:6px;border:1px solid rgba(224,90,90,0.2);}
+.bill-row{display:flex;gap:1rem;flex-wrap:wrap;}
+.bill-group{flex:1;min-width:130px;display:flex;flex-direction:column;gap:5px;}
+.bill-group label{font-size:0.7rem;font-weight:500;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted);}
+.bill-input-wrap{display:flex;align-items:center;background:var(--navy-mid);border:1px solid var(--navy-border);border-radius:10px;overflow:hidden;transition:border-color 0.2s;}
+.bill-input-wrap:focus-within{border-color:var(--amber);box-shadow:0 0 0 3px rgba(255,191,105,0.08);}
+.bill-prefix{padding:0 10px;font-size:0.82rem;color:var(--text-muted);font-weight:500;border-right:1px solid var(--navy-border);height:40px;display:flex;align-items:center;}
+.bill-input-wrap input{flex:1;height:40px;border:none;background:transparent;color:var(--text-primary);font-size:0.95rem;font-weight:500;padding:0 10px;outline:none;font-family:'JetBrains Mono',monospace;min-width:0;}
+.bill-input-wrap input::placeholder{color:var(--text-muted);font-weight:400;font-family:'DM Sans',sans-serif;font-size:0.85rem;}
+.submit-btn{display:block;width:calc(100% - 2.5rem);height:46px;border-radius:10px;border:none;background:var(--teal);color:var(--navy);font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer;transition:all 0.2s;margin:1rem 1.25rem;}
+.submit-btn:hover{opacity:0.9;transform:translateY(-1px);}
+.submit-btn:disabled{background:var(--navy-border);color:var(--text-muted);cursor:not-allowed;transform:none;}
+.empty{text-align:center;padding:3rem 2rem;animation:fadeUp 0.4s ease both;}
+.empty-icon{width:56px;height:56px;margin:0 auto 1rem;background:var(--teal-glow);border:1px solid rgba(46,196,182,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.empty h3{font-size:1.1rem;color:var(--white);margin-bottom:0.5rem;}
+.empty p{font-size:0.85rem;color:var(--text-muted);}
+.record{background:var(--navy-card);border:1px solid var(--navy-border);border-radius:16px;margin-bottom:1rem;overflow:hidden;animation:fadeUp 0.4s ease both;transition:border-color 0.2s;}
+.record:hover{border-color:rgba(46,196,182,0.2);}
+.record-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;cursor:pointer;user-select:none;gap:1rem;}
+.record-header-left{display:flex;flex-direction:column;gap:3px;}
+.record-date{font-size:0.95rem;font-weight:500;color:var(--white);}
+.record-meta{font-size:0.78rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;}
+.manual-tag{display:inline-block;font-size:0.65rem;background:rgba(255,191,105,0.1);color:var(--amber);border:1px solid rgba(255,191,105,0.2);border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:middle;font-family:'DM Sans',sans-serif;letter-spacing:0.04em;}
+.record-header-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.record-total{font-size:1.1rem;font-weight:600;color:var(--teal);font-family:'JetBrains Mono',monospace;}
+.chevron{width:20px;height:20px;color:var(--text-muted);transition:transform 0.25s;flex-shrink:0;}
+.record.open .chevron{transform:rotate(180deg);}
+.household-pills{display:flex;gap:6px;flex-wrap:wrap;padding:0 1.25rem 1rem;}
+.hpill{display:flex;flex-direction:column;border-radius:10px;padding:8px 12px;flex:1;min-width:80px;border:1px solid transparent;}
+.hpill-name{font-size:0.7rem;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;opacity:0.7;margin-bottom:2px;}
+.hpill-amt{font-size:1rem;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.hpill-pct{font-size:0.72rem;opacity:0.65;font-family:'JetBrains Mono',monospace;}
+.hpill.waldy{background:rgba(249,115,22,0.1);border-color:rgba(249,115,22,0.2);color:#f97316;}
+.hpill.pauline{background:rgba(192,132,252,0.1);border-color:rgba(192,132,252,0.2);color:#c084fc;}
+.hpill.nicka{background:rgba(110,231,183,0.1);border-color:rgba(110,231,183,0.2);color:#6ee7b7;}
+.hpill.main{background:rgba(251,113,133,0.08);border-color:rgba(251,113,133,0.2);color:#fb7185;}
+.hpill.main.zero{opacity:0.35;}
+.record-detail{display:none;border-top:1px solid var(--navy-border);}
+.record.open .record-detail{display:block;}
+.detail-section{padding:1rem 1.25rem;border-bottom:1px solid var(--navy-border);}
+.detail-section:last-child{border-bottom:none;}
+.detail-label{font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);margin-bottom:0.75rem;}
+table{width:100%;border-collapse:collapse;}
+th{font-size:0.7rem;font-weight:500;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted);padding:0 0.75rem 0.5rem;text-align:left;}
+th:first-child{padding-left:0;}
+td{padding:0.6rem 0.75rem;font-size:0.85rem;color:var(--text-primary);border-top:1px solid rgba(36,61,84,0.6);}
+td:first-child{padding-left:0;}
+tr.total-row td{border-top:1px solid rgba(46,196,182,0.2);font-weight:600;color:var(--white);background:rgba(46,196,182,0.04);}
+tr.main-row td{color:var(--text-secondary);font-style:italic;}
+tr.main-row.zero td{opacity:0.4;}
+.pct-badge{display:inline-block;background:rgba(46,196,182,0.1);color:var(--teal);border-radius:5px;padding:1px 7px;font-size:0.78rem;font-weight:500;font-family:'JetBrains Mono',monospace;}
+.amt-strong{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--amber);}
+tr.main-row .amt-strong{color:var(--text-secondary);font-weight:400;}
+.summary-row{display:flex;gap:1rem;flex-wrap:wrap;}
+.sitem{flex:1;min-width:100px;}
+.sitem-label{font-size:0.72rem;color:var(--text-muted);margin-bottom:2px;}
+.sitem-val{font-size:1rem;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--text-primary);}
+.delete-btn{margin:0.75rem 1.25rem 1rem;display:flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(224,90,90,0.25);border-radius:8px;color:var(--red);font-family:'DM Sans',sans-serif;font-size:0.8rem;padding:6px 12px;cursor:pointer;transition:all 0.2s;width:fit-content;}
+.delete-btn:hover{background:var(--red-bg);border-color:rgba(224,90,90,0.5);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+@media(max-width:480px){.page-title{font-size:1.4rem;}td,th{padding:0.5rem 0.4rem;}td:first-child,th:first-child{padding-left:0;}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="page-header">
+  <div class="page-header-left">
+    <a href="index.html" class="back-link">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg>
+      Back to calculator
+    </a>
+    <div class="page-title">Bill History</div>
+    <div class="page-subtitle">All calculations recorded on this device</div>
+  </div>
+  <div class="record-count" id="record-count">0 records</div>
+</div>
+
+<button class="add-btn" id="add-btn" onclick="showForm()">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  Add a past bill entry
+</button>
+
+<div class="entry-form" id="entry-form" style="display:none;">
+  <div class="entry-form-header">
+    <div class="entry-form-title">Manual bill entry</div>
+    <button class="entry-form-close" onclick="hideForm()">&#x2715;</button>
+  </div>
+  <div class="form-section">
+    <div class="form-section-label">Bill date</div>
+    <div class="date-wrap">
+      <label>When was this bill?</label>
+      <input type="date" id="entry-date" oninput="validateForm()" />
+    </div>
+  </div>
+  <div class="form-section">
+    <div class="form-section-label">Meter readings</div>
+    <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:1rem;">Enter all 5 digits. The <span style="color:var(--red)">last digit</span> is not counted.</p>
+    <div class="hh-block"><div class="hh-name">Waldy</div>
+      <div class="meter-row">
+        <div class="meter-group"><div class="meter-lbl">Last month</div><div class="meter-wrap" id="fw-waldy-prev"></div></div>
+        <div class="meter-group"><div class="meter-lbl">This month</div><div class="meter-wrap" id="fw-waldy-curr"></div></div>
+        <div class="cons-display"><div class="meter-lbl">Usage</div><div class="cons-val dash" id="fc-waldy">&#8212;</div><div class="cons-unit">m&#179;</div></div>
+      </div>
+      <div class="err-msg" id="fe-waldy">This month must be greater than last month.</div>
+    </div>
+    <div class="hh-block"><div class="hh-name">Pauline</div>
+      <div class="meter-row">
+        <div class="meter-group"><div class="meter-lbl">Last month</div><div class="meter-wrap" id="fw-pauline-prev"></div></div>
+        <div class="meter-group"><div class="meter-lbl">This month</div><div class="meter-wrap" id="fw-pauline-curr"></div></div>
+        <div class="cons-display"><div class="meter-lbl">Usage</div><div class="cons-val dash" id="fc-pauline">&#8212;</div><div class="cons-unit">m&#179;</div></div>
+      </div>
+      <div class="err-msg" id="fe-pauline">This month must be greater than last month.</div>
+    </div>
+    <div class="hh-block"><div class="hh-name">Nicka</div>
+      <div class="meter-row">
+        <div class="meter-group"><div class="meter-lbl">Last month</div><div class="meter-wrap" id="fw-nicka-prev"></div></div>
+        <div class="meter-group"><div class="meter-lbl">This month</div><div class="meter-wrap" id="fw-nicka-curr"></div></div>
+        <div class="cons-display"><div class="meter-lbl">Usage</div><div class="cons-val dash" id="fc-nicka">&#8212;</div><div class="cons-unit">m&#179;</div></div>
+      </div>
+      <div class="err-msg" id="fe-nicka">This month must be greater than last month.</div>
+    </div>
+  </div>
+  <div class="form-section">
+    <div class="form-section-label">Water bill</div>
+    <div class="bill-row">
+      <div class="bill-group"><label>Bill consumption</label>
+        <div class="bill-input-wrap"><span class="bill-prefix">m&#179;</span><input type="number" id="fe-cbm" placeholder="e.g. 60" min="0" step="1" oninput="validateForm()" /></div>
+      </div>
+      <div class="bill-group"><label>Bill amount</label>
+        <div class="bill-input-wrap"><span class="bill-prefix">&#8369;</span><input type="number" id="fe-php" placeholder="Total amount due" min="0" step="0.01" oninput="validateForm()" /></div>
+      </div>
+    </div>
+  </div>
+  <button class="submit-btn" id="submit-btn" onclick="submitEntry()" disabled>Save to history</button>
+</div>
+
+<div id="history-list"></div>
+</div>
+
+<script>
+const HH=['waldy','pauline','nicka'];
+const ALL_HH=['waldy','pauline','nicka','main'];
+const LABELS={waldy:'Waldy',pauline:'Pauline',nicka:'Nicka',main:'Main'};
+
+function fmtPhp(n){return '\u20b1'+n.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtDate(iso){return new Date(iso).toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});}
+function fmtDateShort(iso){return new Date(iso).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}
+function fmtDateShortNoTime(iso){return new Date(iso).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'});}
+function pad4(n){return String(n).padStart(4,'0');}
+function loadHistory(){try{return JSON.parse(localStorage.getItem('wbc_history')||'[]');}catch(e){return [];}}
+function saveHistoryData(d){localStorage.setItem('wbc_history',JSON.stringify(d));}
+
+function buildFormMeter(wrapperId){
+  const wrap=document.getElementById(wrapperId);
+  for(let i=0;i<5;i++){
+    const inp=document.createElement('input');
+    inp.type='text';inp.inputMode='numeric';inp.maxLength=1;
+    inp.className='digit'+(i===4?' red-digit':'');
+    inp.addEventListener('input',e=>{
+      e.target.value=e.target.value.replace(/\D/,'');
+      if(e.target.value&&i<4){const nx=wrap.querySelectorAll('.digit')[i+1];if(nx)nx.focus();}
+      onFormChange();
+    });
+    inp.addEventListener('keydown',e=>{
+      if(e.key==='Backspace'&&!e.target.value&&i>0){const pv=wrap.querySelectorAll('.digit')[i-1];if(pv){pv.focus();pv.value='';}onFormChange();}
+      if(e.key==='ArrowRight'&&i<4){const nx=wrap.querySelectorAll('.digit')[i+1];if(nx)nx.focus();}
+      if(e.key==='ArrowLeft'&&i>0){const pv=wrap.querySelectorAll('.digit')[i-1];if(pv)pv.focus();}
+    });
+    wrap.appendChild(inp);
+  }
+}
+
+function getFormMeter(id){
+  const wrap=document.getElementById(id);
+  const digits=wrap.querySelectorAll('.digit');
+  let s='';digits.forEach(d=>s+=(d.value||''));
+  if(s.length<5)return null;
+  return parseInt(s.substring(0,4),10);
+}
+function getFormLastDigit(id){
+  const wrap=document.getElementById(id);
+  const digits=wrap.querySelectorAll('.digit');
+  return digits[4]?(digits[4].value||'0'):'0';
+}
+
+function onFormChange(){
+  HH.forEach(h=>{
+    const prev=getFormMeter('fw-'+h+'-prev'),curr=getFormMeter('fw-'+h+'-curr');
+    const el=document.getElementById('fc-'+h),err=document.getElementById('fe-'+h);
+    if(prev===null||curr===null){el.textContent='\u2014';el.className='cons-val dash';err.style.display='none';}
+    else if(curr<prev){el.textContent='\u2014';el.className='cons-val dash';err.style.display='block';}
+    else{el.textContent=curr-prev;el.className='cons-val';err.style.display='none';}
+  });
+  validateForm();
+}
+
+function validateForm(){
+  let ok=true;
+  HH.forEach(h=>{const p=getFormMeter('fw-'+h+'-prev'),c=getFormMeter('fw-'+h+'-curr');if(p===null||c===null||c<p)ok=false;});
+  const cbm=parseFloat(document.getElementById('fe-cbm').value);
+  const php=parseFloat(document.getElementById('fe-php').value);
+  const dt=document.getElementById('entry-date').value;
+  if(isNaN(cbm)||isNaN(php)||cbm<=0||php<=0||!dt)ok=false;
+  document.getElementById('submit-btn').disabled=!ok;
+}
+
+function showForm(){
+  document.getElementById('entry-form').style.display='block';
+  document.getElementById('add-btn').style.display='none';
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('entry-date').value=today;
+}
+
+function hideForm(){
+  document.getElementById('entry-form').style.display='none';
+  document.getElementById('add-btn').style.display='flex';
+  HH.forEach(h=>{
+    ['prev','curr'].forEach(t=>{document.getElementById('fw-'+h+'-'+t).querySelectorAll('.digit').forEach(d=>d.value='');});
+    const el=document.getElementById('fc-'+h);el.textContent='\u2014';el.className='cons-val dash';
+    document.getElementById('fe-'+h).style.display='none';
+  });
+  document.getElementById('fe-cbm').value='';
+  document.getElementById('fe-php').value='';
+  document.getElementById('submit-btn').disabled=true;
+}
+
+function submitEntry(){
+  const cons={};
+  HH.forEach(h=>{cons[h]=getFormMeter('fw-'+h+'-curr')-getFormMeter('fw-'+h+'-prev');});
+  const meterTotal=HH.reduce((s,h)=>s+cons[h],0);
+  const billCbm=parseFloat(document.getElementById('fe-cbm').value);
+  const billPhp=parseFloat(document.getElementById('fe-php').value);
+  const mainCons=Math.max(0,billCbm-meterTotal);
+  const consAll={...cons,main:mainCons};
+  const grandTotal=meterTotal+mainCons;
+  const pct={};let pSum=0;
+  ALL_HH.forEach((h,i)=>{if(i<ALL_HH.length-1){pct[h]=parseFloat(((consAll[h]/grandTotal)*100).toFixed(2));pSum+=pct[h];}else pct[h]=parseFloat((100-pSum).toFixed(2));});
+  const amts={};let aSum=0;
+  ALL_HH.forEach((h,i)=>{if(i<ALL_HH.length-1){amts[h]=parseFloat(((pct[h]/100)*billPhp).toFixed(2));aSum+=amts[h];}else amts[h]=parseFloat((billPhp-aSum).toFixed(2));});
+  const pickedDate=document.getElementById('entry-date').value;
+  const dateIso=new Date(pickedDate+'T12:00:00').toISOString();
+  const record={
+    id:Date.now(),date:dateIso,manual:true,
+    billCbm,billPhp,meterTotal,mainCons,grandTotal,
+    cons:consAll,pct,amts,
+    readings:{
+      waldy:{prev:getFormMeter('fw-waldy-prev'),prevLast:getFormLastDigit('fw-waldy-prev'),curr:getFormMeter('fw-waldy-curr'),currLast:getFormLastDigit('fw-waldy-curr')},
+      pauline:{prev:getFormMeter('fw-pauline-prev'),prevLast:getFormLastDigit('fw-pauline-prev'),curr:getFormMeter('fw-pauline-curr'),currLast:getFormLastDigit('fw-pauline-curr')},
+      nicka:{prev:getFormMeter('fw-nicka-prev'),prevLast:getFormLastDigit('fw-nicka-prev'),curr:getFormMeter('fw-nicka-curr'),currLast:getFormLastDigit('fw-nicka-curr')}
+    }
+  };
+  let history=loadHistory();
+  history.push(record);
+  history.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  saveHistoryData(history);
+  hideForm();
+  render();
+}
+
+function deleteRecord(id){
+  if(!confirm('Delete this record?'))return;
+  saveHistoryData(loadHistory().filter(r=>r.id!==id));
+  render();
+}
+function toggleRecord(id){const el=document.getElementById('rec-'+id);if(el)el.classList.toggle('open');}
+
+function render(){
+  const history=loadHistory();
+  document.getElementById('record-count').textContent=history.length+' record'+(history.length!==1?'s':'');
+  const list=document.getElementById('history-list');
+  if(history.length===0){
+    list.innerHTML='<div class="empty"><div class="empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2ec4b6" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg></div><h3>No records yet</h3><p>Every calculation you run will be saved here automatically.<br>You can also add past bills using the button above.</p></div>';
+    return;
+  }
+  list.innerHTML='';
+  history.forEach((r,idx)=>{
+    const card=document.createElement('div');
+    card.className='record';card.id='rec-'+r.id;
+    card.style.animationDelay=(idx*0.04)+'s';
+    const pillsHtml=ALL_HH.map(h=>{
+      const isZero=h==='main'&&r.cons[h]===0;
+      return '<div class="hpill '+h+(isZero?' zero':'')+'"><div class="hpill-name">'+LABELS[h]+'</div><div class="hpill-amt">'+fmtPhp(r.amts[h])+'</div><div class="hpill-pct">'+r.pct[h].toFixed(2)+'%</div></div>';
+    }).join('');
+    const meterRowsHtml=['waldy','pauline','nicka'].map(h=>{
+      const rd=r.readings[h];
+      return '<tr><td style="font-weight:500">'+LABELS[h]+'</td><td><span style="font-family:\'JetBrains Mono\',monospace">'+pad4(rd.prev)+'<span style="color:#e05a5a">'+rd.prevLast+'</span></span></td><td><span style="font-family:\'JetBrains Mono\',monospace">'+pad4(rd.curr)+'<span style="color:#e05a5a">'+rd.currLast+'</span></span></td><td style="font-family:\'JetBrains Mono\',monospace;font-weight:600;color:#2ec4b6">'+r.cons[h]+' m\u00b3</td></tr>';
+    }).join('');
+    const costRowsHtml=ALL_HH.map(h=>{
+      const isMain=h==='main',isZero=isMain&&r.cons[h]===0;
+      const nameCell=isMain?LABELS[h]+' <span style="font-size:0.73rem;opacity:0.6">(shared excess)</span>':LABELS[h];
+      return '<tr class="'+(isMain?'main-row':'')+(isZero?' zero':'')+'"><td style="'+((!isMain)?'font-weight:500':'')+'">'+nameCell+'</td><td style="font-family:\'JetBrains Mono\',monospace">'+r.cons[h]+' m\u00b3</td><td><span class="pct-badge">'+r.pct[h].toFixed(2)+'%</span></td><td class="amt-strong">'+fmtPhp(r.amts[h])+'</td></tr>';
+    }).join('');
+    const isManual=r.manual===true;
+    const dateDisplay=isManual?fmtDateShortNoTime(r.date):fmtDateShort(r.date);
+    card.innerHTML='<div class="record-header" onclick="toggleRecord('+r.id+')"><div class="record-header-left"><div class="record-date">'+fmtDate(r.date)+(isManual?'<span class="manual-tag">manual</span>':'')+'</div><div class="record-meta">'+r.billCbm+' m\u00b3 bill &nbsp;\u00b7&nbsp; '+r.grandTotal+' m\u00b3 total &nbsp;\u00b7&nbsp; '+dateDisplay+'</div></div><div class="record-header-right"><div class="record-total">'+fmtPhp(r.billPhp)+'</div><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg></div></div>'
+    +'<div class="household-pills">'+pillsHtml+'</div>'
+    +'<div class="record-detail">'
+    +'<div class="detail-section"><div class="detail-label">Bill summary</div><div class="summary-row"><div class="sitem"><div class="sitem-label">Meter total</div><div class="sitem-val">'+r.meterTotal+' m\u00b3</div></div><div class="sitem"><div class="sitem-label">Bill total</div><div class="sitem-val">'+r.billCbm+' m\u00b3</div></div><div class="sitem"><div class="sitem-label">Disparity (Main)</div><div class="sitem-val" style="color:'+(r.mainCons>0?'#fb7185':'var(--text-muted)')+'">'+r.mainCons+' m\u00b3</div></div><div class="sitem"><div class="sitem-label">Bill amount</div><div class="sitem-val" style="color:var(--teal)">'+fmtPhp(r.billPhp)+'</div></div></div></div>'
+    +'<div class="detail-section"><div class="detail-label">Meter readings</div><table><thead><tr><th>Household</th><th>Last month</th><th>This month</th><th>Usage</th></tr></thead><tbody>'+meterRowsHtml+'</tbody></table></div>'
+    +'<div class="detail-section"><div class="detail-label">Cost breakdown</div><table><thead><tr><th>Household</th><th>m\u00b3</th><th>Share</th><th>Amount due</th></tr></thead><tbody>'+costRowsHtml+'<tr class="total-row"><td>Total</td><td style="font-family:\'JetBrains Mono\',monospace">'+r.grandTotal+' m\u00b3</td><td><span class="pct-badge">100.00%</span></td><td class="amt-strong">'+fmtPhp(r.billPhp)+'</td></tr></tbody></table></div>'
+    +'<button class="delete-btn" onclick="deleteRecord('+r.id+')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14a2,2,0,0,1-2,2H8a2,2,0,0,1-2-2L5,6"/><path d="M10,11v6"/><path d="M14,11v6"/><path d="M9,6V4a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1V6"/></svg>Delete this record</button>'
+    +'</div>';
+    list.appendChild(card);
+  });
+}
+
+HH.forEach(h=>{buildFormMeter('fw-'+h+'-prev');buildFormMeter('fw-'+h+'-curr');});
+render();
+</script>
+</body>
+</html>
