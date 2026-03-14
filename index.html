@@ -984,38 +984,41 @@ function saveAsImage() {
   btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg> Capturing...`;
   actionRow.style.opacity = '0';
 
-  // Hide body::before overlay and background decoration during capture
   const style = document.createElement('style');
   style.id = 'capture-fix';
   style.textContent = 'body::before, body::after { display: none !important; }';
   document.head.appendChild(style);
 
   const report = document.getElementById('report');
-  const pad = 32;
+  const pad = 40;
+
+  // Temporarily force the report bg to be fully opaque so html2canvas doesn't composite over body
+  report.style.backgroundColor = '#0d1b2a';
 
   setTimeout(() => {
     html2canvas(report, {
-      backgroundColor: '#0d1b2a',
+      backgroundColor: null,
       scale: 2,
       useCORS: true,
+      allowTaint: true,
       logging: false,
       scrollX: 0,
       scrollY: -window.scrollY
     }).then(canvas => {
-      // Remove the capture fix style
       document.getElementById('capture-fix').remove();
+      report.style.backgroundColor = '';
       actionRow.style.opacity = '1';
       btn.disabled = false;
       btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg> Save as image`;
 
-      // Draw onto a padded canvas
       const padded = document.createElement('canvas');
-      padded.width = canvas.width + pad * 2 * 2;
-      padded.height = canvas.height + pad * 2 * 2;
+      const scale = 2;
+      padded.width = canvas.width + pad * scale * 2;
+      padded.height = canvas.height + pad * scale * 2;
       const ctx = padded.getContext('2d');
       ctx.fillStyle = '#0d1b2a';
       ctx.fillRect(0, 0, padded.width, padded.height);
-      ctx.drawImage(canvas, pad * 2, pad * 2);
+      ctx.drawImage(canvas, pad * scale, pad * scale);
 
       const link = document.createElement('a');
       const date = new Date().toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'}).replace(/ /g,'-');
@@ -1024,11 +1027,12 @@ function saveAsImage() {
       link.click();
     }).catch(() => {
       document.getElementById('capture-fix')?.remove();
+      report.style.backgroundColor = '';
       actionRow.style.opacity = '1';
       btn.disabled = false;
       btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg> Save as image`;
     });
-  }, 100);
+  }, 150);
 }
 
 function saveToHistory(record) {
