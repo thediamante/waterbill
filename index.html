@@ -982,43 +982,61 @@ function saveAsImage() {
   const actionRow = document.querySelector('.action-row');
   btn.disabled = true;
   btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg> Capturing...`;
-  actionRow.style.opacity = '0';
-
-  const style = document.createElement('style');
-  style.id = 'capture-fix';
-  style.textContent = 'body::before, body::after { display: none !important; }';
-  document.head.appendChild(style);
+  actionRow.style.visibility = 'hidden';
 
   const report = document.getElementById('report');
-  const pad = 40;
-
-  // Temporarily force the report bg to be fully opaque so html2canvas doesn't composite over body
-  report.style.backgroundColor = '#0d1b2a';
+  const pad = 48;
 
   setTimeout(() => {
     html2canvas(report, {
-      backgroundColor: null,
+      backgroundColor: '#0d1b2a',
       scale: 2,
       useCORS: true,
       allowTaint: true,
       logging: false,
       scrollX: 0,
-      scrollY: -window.scrollY
+      scrollY: -window.scrollY,
+      onclone: (doc) => {
+        // Strip body background and decorations so they don't composite
+        doc.body.style.background = 'transparent';
+        const before = doc.createElement('style');
+        before.textContent = 'body::before,body::after{display:none!important;} #report{background:#0d1b2a!important;}';
+        doc.head.appendChild(before);
+        // Hide action row in clone
+        const ar = doc.querySelector('.action-row');
+        if (ar) ar.style.display = 'none';
+      }
     }).then(canvas => {
-      document.getElementById('capture-fix').remove();
-      report.style.backgroundColor = '';
-      actionRow.style.opacity = '1';
+      actionRow.style.visibility = 'visible';
       btn.disabled = false;
       btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg> Save as image`;
 
-      const padded = document.createElement('canvas');
+      // Find the actual bottom of content (trim transparent/empty rows at bottom)
+      const ctx = canvas.getContext('2d');
+      let bottomY = canvas.height;
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      for (let y = canvas.height - 1; y > canvas.height / 2; y--) {
+        let rowHasContent = false;
+        for (let x = 0; x < canvas.width; x++) {
+          const idx = (y * canvas.width + x) * 4;
+          const r = imgData.data[idx], g = imgData.data[idx+1], b = imgData.data[idx+2];
+          // If pixel differs enough from the bg color (#0d1b2a = 13,27,42)
+          if (Math.abs(r-13) + Math.abs(g-27) + Math.abs(b-42) > 20) {
+            rowHasContent = true; break;
+          }
+        }
+        if (rowHasContent) { bottomY = y + pad * 2; break; }
+      }
+
       const scale = 2;
+      const padded = document.createElement('canvas');
       padded.width = canvas.width + pad * scale * 2;
-      padded.height = canvas.height + pad * scale * 2;
-      const ctx = padded.getContext('2d');
-      ctx.fillStyle = '#0d1b2a';
-      ctx.fillRect(0, 0, padded.width, padded.height);
-      ctx.drawImage(canvas, pad * scale, pad * scale);
+      padded.height = Math.min(bottomY, canvas.height) + pad * scale * 2;
+      const pctx = padded.getContext('2d');
+      pctx.fillStyle = '#0d1b2a';
+      pctx.fillRect(0, 0, padded.width, padded.height);
+      pctx.drawImage(canvas, 0, 0, canvas.width, Math.min(bottomY, canvas.height),
+        pad * scale, pad * scale, canvas.width, Math.min(bottomY, canvas.height));
 
       const link = document.createElement('a');
       const date = new Date().toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'}).replace(/ /g,'-');
@@ -1026,9 +1044,7 @@ function saveAsImage() {
       link.href = padded.toDataURL('image/png');
       link.click();
     }).catch(() => {
-      document.getElementById('capture-fix')?.remove();
-      report.style.backgroundColor = '';
-      actionRow.style.opacity = '1';
+      actionRow.style.visibility = 'visible';
       btn.disabled = false;
       btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg> Save as image`;
     });
