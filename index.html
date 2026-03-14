@@ -924,9 +924,7 @@ function calculate() {
 
 function resetForm() {
   HH.forEach(h => {
-    ['prev','curr'].forEach(t => {
-      document.getElementById(`wrap-${h}-${t}`).querySelectorAll('.digit').forEach(d => d.value='');
-    });
+    document.getElementById(`wrap-${h}-curr`).querySelectorAll('.digit').forEach(d => d.value='');
     const el = document.getElementById(`cons-${h}`);
     el.textContent = '—'; el.className = 'cons-val dash';
     document.getElementById(`err-${h}`).style.display = 'none';
@@ -939,6 +937,7 @@ function resetForm() {
   const btn = document.getElementById('save-btn');
   btn.classList.remove('saved');
   btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg> Save as last month's readings`;
+  loadSavedReadings();
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
