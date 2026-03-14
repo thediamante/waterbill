@@ -575,7 +575,6 @@
       </svg>
     </div>
     <h1>Water Bill Calculator</h1>
-    <p>Divide your water bill fairly across all households</p>
     <a href="history.html" style="display:inline-flex;align-items:center;gap:6px;margin-top:0.75rem;font-size:0.8rem;color:var(--text-secondary);text-decoration:none;border:1px solid var(--navy-border);padding:5px 12px;border-radius:20px;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--teal)';this.style.color='var(--teal)'" onmouseout="this.style.borderColor='var(--navy-border)';this.style.color='var(--text-secondary)'">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
       View history
@@ -977,55 +976,161 @@ function resetForm() {
 }
 
 function saveAsImage() {
-  const report = document.getElementById('report');
   const btn = document.getElementById('img-btn');
   btn.disabled = true;
   btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg> Opening...`;
 
-  // Grab all styles from the current page
-  const styles = Array.from(document.styleSheets).map(ss => {
-    try { return Array.from(ss.cssRules).map(r => r.cssText).join('\n'); } catch(e) { return ''; }
-  }).join('\n');
+  // Collect rendered data from the live DOM
+  const date = document.getElementById('rpt-date').textContent;
+  const total = document.getElementById('rpt-total').textContent;
+  const pillsEl = document.getElementById('summary-pills');
+  const noticeEl = document.getElementById('notice-area');
+  const meterRows = Array.from(document.querySelectorAll('#meter-tbody tr')).map(tr => {
+    const cells = tr.querySelectorAll('td');
+    return { name: cells[0]?.innerText, prev: cells[1]?.innerHTML, curr: cells[2]?.innerHTML, usage: cells[3]?.innerText };
+  });
+  const costRows = Array.from(document.querySelectorAll('#cost-tbody tr')).map(tr => {
+    const cells = tr.querySelectorAll('td');
+    const isTotal = tr.classList.contains('total-row');
+    const isMain = tr.classList.contains('main-row');
+    const isZero = tr.classList.contains('zero');
+    return { name: cells[0]?.innerHTML, cbm: cells[1]?.innerText, pct: cells[2]?.innerText, amt: cells[3]?.innerText, isTotal, isMain, isZero };
+  });
+  const barRows = Array.from(document.querySelectorAll('.bar-row')).map(r => {
+    const fill = r.querySelector('.bar-fill');
+    const color = fill?.style.background || '#2ec4b6';
+    const pct = r.querySelector('.bar-pct')?.textContent || '';
+    const name = r.querySelector('.bar-name')?.textContent || '';
+    const w = fill?.style.width || '0%';
+    return { name, color, pct, w };
+  });
 
-  const date = new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'});
+  const pillsHtml = pillsEl?.innerHTML || '';
+  const noticeHtml = noticeEl?.innerHTML || '';
+
+  const meterHtml = meterRows.map(r => `
+    <tr>
+      <td style="font-weight:500;padding:10px 12px;border-top:1px solid #243d54;color:#e8f0f7">${r.name}</td>
+      <td style="padding:10px 12px;border-top:1px solid #243d54;font-family:'JetBrains Mono',monospace;color:#e8f0f7">${r.prev}</td>
+      <td style="padding:10px 12px;border-top:1px solid #243d54;font-family:'JetBrains Mono',monospace;color:#e8f0f7">${r.curr}</td>
+      <td style="padding:10px 12px;border-top:1px solid #243d54;font-family:'JetBrains Mono',monospace;font-weight:600;color:#2ec4b6">${r.usage}</td>
+    </tr>`).join('');
+
+  const costHtml = costRows.map(r => {
+    if (r.isTotal) return `
+      <tr style="background:rgba(46,196,182,0.06);">
+        <td style="padding:10px 12px;border-top:1px solid rgba(46,196,182,0.25);font-weight:600;color:#fff">${r.name}</td>
+        <td style="padding:10px 12px;border-top:1px solid rgba(46,196,182,0.25);font-weight:600;color:#fff;font-family:'JetBrains Mono',monospace">${r.cbm}</td>
+        <td style="padding:10px 12px;border-top:1px solid rgba(46,196,182,0.25)"><span style="background:rgba(46,196,182,0.15);color:#2ec4b6;border-radius:5px;padding:2px 8px;font-family:'JetBrains Mono',monospace;font-size:13px">${r.pct}</span></td>
+        <td style="padding:10px 12px;border-top:1px solid rgba(46,196,182,0.25);font-weight:600;color:#ffbf69;font-family:'JetBrains Mono',monospace">${r.amt}</td>
+      </tr>`;
+    const opacity = r.isZero ? 'opacity:0.4;' : '';
+    const nameColor = r.isMain ? 'color:#7da0bb;font-style:italic;' : 'color:#e8f0f7;font-weight:500;';
+    const amtColor = r.isMain ? 'color:#7da0bb;' : 'color:#ffbf69;font-weight:600;';
+    return `
+      <tr style="${opacity}">
+        <td style="padding:10px 12px;border-top:1px solid #243d54;${nameColor}">${r.name}</td>
+        <td style="padding:10px 12px;border-top:1px solid #243d54;color:#e8f0f7;font-family:'JetBrains Mono',monospace">${r.cbm}</td>
+        <td style="padding:10px 12px;border-top:1px solid #243d54"><span style="background:rgba(46,196,182,0.12);color:#2ec4b6;border-radius:5px;padding:2px 8px;font-family:'JetBrains Mono',monospace;font-size:13px">${r.pct}</span></td>
+        <td style="padding:10px 12px;border-top:1px solid #243d54;font-family:'JetBrains Mono',monospace;${amtColor}">${r.amt}</td>
+      </tr>`;
+  }).join('');
+
+  const barHtml = barRows.map(r => `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <div style="font-size:13px;color:#7da0bb;width:70px;flex-shrink:0">${r.name}</div>
+      <div style="flex:1;height:8px;background:#152334;border-radius:99px;overflow:hidden">
+        <div style="width:${r.w};height:100%;background:${r.color};border-radius:99px;"></div>
+      </div>
+      <div style="font-size:13px;font-weight:500;color:#e8f0f7;width:48px;text-align:right;font-family:'JetBrains Mono',monospace">${r.pct}</div>
+    </div>`).join('');
+
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title>Water Bill — ${date}</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-${styles}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { background: #0d1b2a !important; margin: 0; padding: 2rem; }
-body::before, body::after { display: none !important; }
-#report { display: block !important; }
-.action-row { display: none !important; }
-.bar-fill { transition: none !important; }
-@media print {
-  html, body { background: #0d1b2a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  @page { margin: 0.5cm; background: #0d1b2a; }
-}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:#0d1b2a;color:#e8f0f7;font-family:'DM Sans',sans-serif;padding:32px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  @page{margin:1cm;size:A4;}
+  @media print{html,body{padding:0;}}
+  .card{background:#1a2d40;border:1px solid #243d54;border-radius:14px;margin-bottom:14px;overflow:hidden;}
+  .card-inner{padding:1.25rem;}
+  .section-label{font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#2ec4b6;margin-bottom:12px;}
+  table{width:100%;border-collapse:collapse;}
+  th{font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:#4a6b82;padding:0 12px 8px;text-align:left;}
+  th:first-child{padding-left:0;}
+  td:first-child{padding-left:0;}
+  .pills{display:flex;gap:8px;flex-wrap:wrap;}
+  .pill{flex:1;min-width:100px;background:#152334;border:1px solid #243d54;border-radius:10px;padding:10px 12px;}
+  .pill-label{font-size:11px;color:#4a6b82;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;}
+  .pill-val{font-size:20px;font-weight:600;font-family:'JetBrains Mono',monospace;color:#e8f0f7;}
+  .pill-unit{font-size:11px;color:#7da0bb;margin-top:2px;}
+  .pill.accent .pill-val{color:#2ec4b6;}
+  .pill.warn .pill-val{color:#ffbf69;}
+  .notice{font-size:13px;padding:9px 13px;border-radius:9px;background:rgba(46,196,182,0.08);border:1px solid rgba(46,196,182,0.25);color:#7ee8e2;margin-bottom:14px;}
 </style>
 </head>
 <body>
-${report.outerHTML}
+
+<div class="card" style="text-align:center;position:relative;overflow:hidden;">
+  <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:160px;height:3px;background:linear-gradient(90deg,transparent,#2ec4b6,transparent);"></div>
+  <div class="card-inner" style="padding:1.5rem;">
+    <div style="font-family:'DM Serif Display',serif;font-size:26px;color:#fff;margin-bottom:4px;">Results</div>
+    <div style="font-size:13px;color:#4a6b82;margin-bottom:1rem;">${date}</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:400;color:#2ec4b6;letter-spacing:-0.02em;">${total}</div>
+    <div style="font-size:11px;color:#4a6b82;letter-spacing:0.08em;text-transform:uppercase;margin-top:4px;">Total bill amount</div>
+  </div>
+</div>
+
+<div class="pills" style="margin-bottom:14px;">${pillsHtml}</div>
+
+<div class="notice">${noticeHtml.replace(/<div[^>]*>|<\/div>/g,'')}</div>
+
+<div class="card">
+  <div class="card-inner">
+    <div class="section-label">Meter readings</div>
+    <table>
+      <thead><tr>
+        <th style="padding-left:0">Household</th>
+        <th>Last month</th>
+        <th>This month</th>
+        <th>Usage</th>
+      </tr></thead>
+      <tbody>${meterHtml}</tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-inner">
+    <div class="section-label">Consumption breakdown</div>
+    ${barHtml}
+  </div>
+  <div style="padding:0 1.25rem 1.25rem;">
+    <table>
+      <thead><tr>
+        <th style="padding-left:0">Household</th>
+        <th>m³</th>
+        <th>Share</th>
+        <th>Amount due</th>
+      </tr></thead>
+      <tbody>${costHtml}</tbody>
+    </table>
+  </div>
+</div>
+
 </body>
 </html>`);
   win.document.close();
-
-  // Re-animate bars in the new window
-  win.onload = () => {
-    win.document.querySelectorAll('.bar-fill').forEach(el => {
-      const w = el.style.width;
-      el.style.width = '0%';
-      setTimeout(() => { el.style.transition = 'none'; el.style.width = w; }, 50);
-    });
-    setTimeout(() => { win.print(); }, 500);
+  setTimeout(() => {
+    win.print();
     btn.disabled = false;
     btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="8,6 8,2 16,2 16,6"/><path d="M8 18H6a2 2 0 01-2-2v-5a2 2 0 012-2h12a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="8" y="14" width="8" height="6"/></svg> Save as PDF`;
-  };
+  }, 800);
 }
 
 function saveToHistory(record) {
