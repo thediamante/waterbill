@@ -772,6 +772,10 @@ function buildMeter(id) {
     inp.type = 'text'; inp.inputMode = 'numeric'; inp.maxLength = 1;
     inp.className = 'digit' + (i === 4 ? ' red-digit' : '');
     inp.dataset.pos = i;
+    inp.autocomplete = 'off';
+    inp.setAttribute('data-lpignore', 'true');
+    inp.setAttribute('data-form-type', 'other');
+    inp.setAttribute('data-1p-ignore', '');
     inp.addEventListener('input', e => {
       e.target.value = e.target.value.replace(/\D/,'');
       if (e.target.value && i < 4) { const nx = wrap.querySelectorAll('.digit')[i+1]; if(nx) nx.focus(); }
@@ -841,10 +845,32 @@ function calculate() {
   const meterTotal = HH.reduce((s,h) => s+cons[h], 0);
   const billCbm = parseFloat(document.getElementById('bill-cbm').value);
   const billPhp = parseFloat(document.getElementById('bill-php').value);
-  const mainCons = Math.max(0, billCbm - meterTotal);
+  const disparity = billCbm - meterTotal;
+
+  // Adjusted consumption used for percentage calculation
+  const consAdj = {};
+  let mainCons = 0;
+  let grandTotal = 0;
+
+  if (disparity > 0) {
+    // Bill higher than meters — excess goes to Main
+    HH.forEach(h => { consAdj[h] = cons[h]; });
+    mainCons = disparity;
+    grandTotal = billCbm;
+  } else if (disparity < 0) {
+    // Bill lower than meters — proportionally scale down each household
+    HH.forEach(h => { consAdj[h] = parseFloat(((cons[h] / meterTotal) * billCbm).toFixed(4)); });
+    mainCons = 0;
+    grandTotal = billCbm;
+  } else {
+    // Perfect match
+    HH.forEach(h => { consAdj[h] = cons[h]; });
+    mainCons = 0;
+    grandTotal = meterTotal;
+  }
+
   const allHH = [...HH, 'main'];
-  const consAll = {...cons, main: mainCons};
-  const grandTotal = meterTotal + mainCons;
+  const consAll = {...consAdj, main: mainCons};
 
   // Percentages (last item absorbs rounding)
   const pct = {};
@@ -868,7 +894,6 @@ function calculate() {
 
   // Summary pills
   const sp = document.getElementById('summary-pills');
-  const disparity = billCbm - meterTotal;
   sp.innerHTML = `
     <div class="pill"><div class="pill-label">Meter total</div><div class="pill-val">${meterTotal}</div><div class="pill-unit">m³ from readings</div></div>
     <div class="pill accent"><div class="pill-label">Bill total</div><div class="pill-val">${billCbm}</div><div class="pill-unit">m³ on bill</div></div>
@@ -877,25 +902,26 @@ function calculate() {
 
   // Notice
   const na = document.getElementById('notice-area');
-  if (mainCons===0 && disparity<=0) {
+  if (disparity === 0) {
     na.innerHTML = `<div class="notice-bar info">No disparity — bill matches meter readings. Main household: ₱0.00 (0.00%).</div>`;
   } else if (disparity < 0) {
-    na.innerHTML = `<div class="notice-bar warn">Bill is lower than meter readings by ${Math.abs(disparity)} m³. Main is set to 0.</div>`;
+    na.innerHTML = `<div class="notice-bar warn">Meter readings exceed the bill by ${Math.abs(disparity)} m³. Each household's consumption has been scaled down proportionally to match the bill.</div>`;
   } else {
     na.innerHTML = `<div class="notice-bar info">${mainCons} m³ disparity is allocated to Main as shared excess.</div>`;
   }
 
-  // Meter table
+  // Meter table — always show raw readings, note adjusted if needed
   const mTb = document.getElementById('meter-tbody');
   mTb.innerHTML = '';
   HH.forEach(h => {
     const pv = getMeter(`wrap-${h}-prev`);
     const cv = getMeter(`wrap-${h}-curr`);
     const tr = document.createElement('tr');
+    const adjNote = disparity < 0 ? ` <span style="font-size:0.72rem;color:var(--text-muted)">(adj: ${consAdj[h].toFixed(2)})</span>` : '';
     tr.innerHTML = `<td style="font-weight:500">${LABELS[h]}</td>
       <td><span style="font-family:'JetBrains Mono',monospace;letter-spacing:0.05em">${pad4(pv)}<span style="color:var(--red);">${getLastDigit(`wrap-${h}-prev`)}</span></span></td>
       <td><span style="font-family:'JetBrains Mono',monospace;letter-spacing:0.05em">${pad4(cv)}<span style="color:var(--red);">${getLastDigit(`wrap-${h}-curr`)}</span></span></td>
-      <td style="font-weight:600;color:var(--teal);font-family:'JetBrains Mono',monospace">${cons[h]} m³</td>`;
+      <td style="font-weight:600;color:var(--teal);font-family:'JetBrains Mono',monospace">${cons[h]} m³${adjNote}</td>`;
     mTb.appendChild(tr);
   });
 
@@ -924,9 +950,12 @@ function calculate() {
     const isZero = isMain && mainCons === 0;
     if (isMain) tr.className = 'main-row' + (isZero ? ' zero' : '');
     const nameCell = isMain ? `${LABELS[h]} <span style="font-size:0.75rem;opacity:0.7">(shared excess)</span>` : LABELS[h];
+    const cbmDisplay = disparity < 0 && !isMain
+      ? `${consAll[h].toFixed(2)} m³`
+      : `${consAll[h]} m³`;
     tr.innerHTML = `
       <td style="${!isMain?'font-weight:500':''};">${nameCell}</td>
-      <td style="font-family:'JetBrains Mono',monospace">${consAll[h]} m³</td>
+      <td style="font-family:'JetBrains Mono',monospace">${cbmDisplay}</td>
       <td><span class="pct-badge">${fmtPct(pct[h])}</span></td>
       <td class="amount-strong">${fmtPhp(amts[h])}</td>
     `;
@@ -934,15 +963,17 @@ function calculate() {
   });
   const totTr = document.createElement('tr');
   totTr.className = 'total-row';
-  totTr.innerHTML = `<td>Total</td><td style="font-family:'JetBrains Mono',monospace">${grandTotal} m³</td><td><span class="pct-badge">100.00%</span></td><td class="amount-strong">${fmtPhp(billPhp)}</td>`;
+  totTr.innerHTML = `<td>Total</td><td style="font-family:'JetBrains Mono',monospace">${billCbm} m³</td><td><span class="pct-badge">100.00%</span></td><td class="amount-strong">${fmtPhp(billPhp)}</td>`;
   cTb.appendChild(totTr);
 
   // Save to history
   saveToHistory({
     id: Date.now(),
     date: new Date().toISOString(),
-    billCbm, billPhp, meterTotal, mainCons, grandTotal,
+    billCbm, billPhp, meterTotal, mainCons, grandTotal: billCbm,
+    disparity,
     cons: {...consAll},
+    rawCons: {...cons},
     pct: {...pct},
     amts: {...amts},
     readings: {
