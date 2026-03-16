@@ -575,6 +575,7 @@
       </svg>
     </div>
     <h1>Water Bill Calculator</h1>
+    <p>Divide your water bill fairly across all households</p>
     <a href="history.html" style="display:inline-flex;align-items:center;gap:6px;margin-top:0.75rem;font-size:0.8rem;color:var(--text-secondary);text-decoration:none;border:1px solid var(--navy-border);padding:5px 12px;border-radius:20px;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--teal)';this.style.color='var(--teal)'" onmouseout="this.style.borderColor='var(--navy-border)';this.style.color='var(--text-secondary)'">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
       View history
@@ -766,24 +767,63 @@ const BAR_COLORS = {waldy:'#f97316', pauline:'#c084fc', nicka:'#6ee7b7', main:'#
 
 function buildMeter(id) {
   const wrap = document.getElementById(id);
+  // Role="presentation" and aria-hidden on wrap stops most extensions from treating it as a form field
+  wrap.setAttribute('role', 'presentation');
+  wrap.setAttribute('data-lpignore', 'true');
   for (let i = 0; i < 5; i++) {
     const inp = document.createElement('input');
     inp.type = 'text'; inp.inputMode = 'numeric'; inp.maxLength = 1;
     inp.className = 'digit' + (i === 4 ? ' red-digit' : '');
     inp.dataset.pos = i;
+    // Block all password managers from injecting into these fields
     inp.autocomplete = 'off';
     inp.setAttribute('data-lpignore', 'true');
     inp.setAttribute('data-form-type', 'other');
     inp.setAttribute('data-1p-ignore', '');
+    inp.setAttribute('data-bwignore', '');
+    inp.setAttribute('data-passbolt-ignore', '');
+    inp.setAttribute('aria-autocomplete', 'none');
+    inp.setAttribute('readonly', '');
+    // Remove readonly on focus so they can type, but readonly prevents extension injection on load
+    inp.addEventListener('focus', e => {
+      inp.removeAttribute('readonly');
+      inp.select();
+    });
+    inp.addEventListener('blur', () => {
+      inp.setAttribute('readonly', '');
+    });
     inp.addEventListener('input', e => {
-      e.target.value = e.target.value.replace(/\D/,'');
+      const val = e.target.value.replace(/\D/,'');
+      e.target.value = val ? val[val.length-1] : ''; // keep only last digit typed
       if (e.target.value && i < 4) { const nx = wrap.querySelectorAll('.digit')[i+1]; if(nx) nx.focus(); }
       onMeterChange();
     });
-    inp.addEventListener('keydown', e => {
-      if (e.key==='Backspace' && !e.target.value && i>0) {
-        const pv = wrap.querySelectorAll('.digit')[i-1]; if(pv){pv.focus();pv.value='';}
-        onMeterChange();
+    inp.addEventListener('paste', e => {
+      e.preventDefault();
+      const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'');
+      if (!pasted) return;
+      const digits = wrap.querySelectorAll('.digit');
+      // Fill from current position onwards
+      pasted.split('').forEach((ch, offset) => {
+        const target = digits[i + offset];
+        if (target) { target.removeAttribute('readonly'); target.value = ch; }
+      });
+      // Focus the next empty digit, or the last one filled
+      const nextEmpty = Array.from(digits).find((d, idx) => idx >= i && !d.value);
+      const lastFilled = digits[Math.min(i + pasted.length, 4)];
+      (nextEmpty || lastFilled).focus();
+      onMeterChange();
+    });
+        if (e.target.value) {
+          e.target.value = '';
+          onMeterChange();
+          e.preventDefault();
+        } else if (i > 0) {
+          const pv = wrap.querySelectorAll('.digit')[i-1];
+          if (pv) { pv.removeAttribute('readonly'); pv.focus(); pv.value = ''; }
+          onMeterChange();
+          e.preventDefault();
+        }
       }
       if (e.key==='ArrowRight' && i<4) { const nx=wrap.querySelectorAll('.digit')[i+1]; if(nx) nx.focus(); }
       if (e.key==='ArrowLeft' && i>0) { const pv=wrap.querySelectorAll('.digit')[i-1]; if(pv) pv.focus(); }
@@ -857,8 +897,9 @@ function calculate() {
     mainCons = disparity;
     grandTotal = billCbm;
   } else if (disparity < 0) {
-    // Bill lower than meters — proportionally scale down each household
-    HH.forEach(h => { consAdj[h] = parseFloat(((cons[h] / meterTotal) * billCbm).toFixed(4)); });
+    // Bill lower than meters — deduct equally from each household
+    const deductEach = Math.abs(disparity) / HH.length;
+    HH.forEach(h => { consAdj[h] = parseFloat((cons[h] - deductEach).toFixed(4)); });
     mainCons = 0;
     grandTotal = billCbm;
   } else {
@@ -904,7 +945,8 @@ function calculate() {
   if (disparity === 0) {
     na.innerHTML = `<div class="notice-bar info">No disparity — bill matches meter readings. Main household: ₱0.00 (0.00%).</div>`;
   } else if (disparity < 0) {
-    na.innerHTML = `<div class="notice-bar warn">Meter readings exceed the bill by ${Math.abs(disparity)} m³. Each household's consumption has been scaled down proportionally to match the bill.</div>`;
+    const deductEach = (Math.abs(disparity) / HH.length).toFixed(4);
+    na.innerHTML = `<div class="notice-bar warn">Meter readings exceed the bill by ${Math.abs(disparity)} m³. ${deductEach} m³ deducted equally from each household.</div>`;
   } else {
     na.innerHTML = `<div class="notice-bar info">${mainCons} m³ disparity is allocated to Main as shared excess.</div>`;
   }
