@@ -767,7 +767,6 @@ const BAR_COLORS = {waldy:'#f97316', pauline:'#c084fc', nicka:'#6ee7b7', main:'#
 
 function buildMeter(id) {
   const wrap = document.getElementById(id);
-  // Role="presentation" and aria-hidden on wrap stops most extensions from treating it as a form field
   wrap.setAttribute('role', 'presentation');
   wrap.setAttribute('data-lpignore', 'true');
   for (let i = 0; i < 5; i++) {
@@ -775,7 +774,6 @@ function buildMeter(id) {
     inp.type = 'text'; inp.inputMode = 'numeric'; inp.maxLength = 1;
     inp.className = 'digit' + (i === 4 ? ' red-digit' : '');
     inp.dataset.pos = i;
-    // Block all password managers from injecting into these fields
     inp.autocomplete = 'off';
     inp.setAttribute('data-lpignore', 'true');
     inp.setAttribute('data-form-type', 'other');
@@ -783,50 +781,34 @@ function buildMeter(id) {
     inp.setAttribute('data-bwignore', '');
     inp.setAttribute('data-passbolt-ignore', '');
     inp.setAttribute('aria-autocomplete', 'none');
-    inp.setAttribute('readonly', '');
-    // Remove readonly on focus so they can type, but readonly prevents extension injection on load
-    inp.addEventListener('focus', e => {
-      inp.removeAttribute('readonly');
-      inp.select();
-    });
-    inp.addEventListener('blur', () => {
-      inp.setAttribute('readonly', '');
-    });
+    inp.addEventListener('focus', () => { inp.select(); });
     inp.addEventListener('input', e => {
       const val = e.target.value.replace(/\D/,'');
-      e.target.value = val ? val[val.length-1] : ''; // keep only last digit typed
+      e.target.value = val ? val[val.length-1] : '';
       if (e.target.value && i < 4) { const nx = wrap.querySelectorAll('.digit')[i+1]; if(nx) nx.focus(); }
       onMeterChange();
+    });
+    inp.addEventListener('keydown', e => {
+      if (e.key==='Backspace') {
+        if (e.target.value) { e.target.value = ''; onMeterChange(); e.preventDefault(); }
+        else if (i > 0) { const pv = wrap.querySelectorAll('.digit')[i-1]; if(pv){pv.focus();pv.value='';} onMeterChange(); e.preventDefault(); }
+      }
+      if (e.key==='ArrowRight' && i<4) { const nx=wrap.querySelectorAll('.digit')[i+1]; if(nx) nx.focus(); }
+      if (e.key==='ArrowLeft' && i>0) { const pv=wrap.querySelectorAll('.digit')[i-1]; if(pv) pv.focus(); }
     });
     inp.addEventListener('paste', e => {
       e.preventDefault();
       const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'');
       if (!pasted) return;
       const digits = wrap.querySelectorAll('.digit');
-      // Fill from current position onwards
       pasted.split('').forEach((ch, offset) => {
         const target = digits[i + offset];
-        if (target) { target.removeAttribute('readonly'); target.value = ch; }
+        if (target) target.value = ch;
       });
-      // Focus the next empty digit, or the last one filled
       const nextEmpty = Array.from(digits).find((d, idx) => idx >= i && !d.value);
       const lastFilled = digits[Math.min(i + pasted.length, 4)];
       (nextEmpty || lastFilled).focus();
       onMeterChange();
-    });
-        if (e.target.value) {
-          e.target.value = '';
-          onMeterChange();
-          e.preventDefault();
-        } else if (i > 0) {
-          const pv = wrap.querySelectorAll('.digit')[i-1];
-          if (pv) { pv.removeAttribute('readonly'); pv.focus(); pv.value = ''; }
-          onMeterChange();
-          e.preventDefault();
-        }
-      }
-      if (e.key==='ArrowRight' && i<4) { const nx=wrap.querySelectorAll('.digit')[i+1]; if(nx) nx.focus(); }
-      if (e.key==='ArrowLeft' && i>0) { const pv=wrap.querySelectorAll('.digit')[i-1]; if(pv) pv.focus(); }
     });
     wrap.appendChild(inp);
   }
