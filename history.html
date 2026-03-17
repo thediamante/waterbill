@@ -97,17 +97,22 @@ th:first-child{padding-left:0;}
 td{padding:0.6rem 0.75rem;font-size:0.85rem;color:var(--text-primary);border-top:1px solid rgba(36,61,84,0.6);}
 td:first-child{padding-left:0;}
 tr.total-row td{border-top:1px solid rgba(46,196,182,0.2);font-weight:600;color:var(--white);background:rgba(46,196,182,0.04);}
-tr.main-row td{color:var(--text-secondary);font-style:italic;}
+tr.main-row td{color:#64748b;font-style:italic;}
 tr.main-row.zero td{opacity:0.4;}
 .pct-badge{display:inline-block;background:rgba(46,196,182,0.1);color:var(--teal);border-radius:5px;padding:1px 7px;font-size:0.78rem;font-weight:500;font-family:'JetBrains Mono',monospace;}
-.amt-strong{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--amber);}
-tr.main-row .amt-strong{color:var(--text-secondary);font-weight:400;}
+.amt-strong{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--red);}
+tr.main-row .amt-strong{color:#64748b;font-weight:500;}
+.hpill.main{background:rgba(100,116,139,0.1);border-color:rgba(100,116,139,0.2);color:#94a3b8;}
+.hpill.main.zero{opacity:0.35;}
 .summary-row{display:flex;gap:1rem;flex-wrap:wrap;}
 .sitem{flex:1;min-width:100px;}
 .sitem-label{font-size:0.72rem;color:var(--text-muted);margin-bottom:2px;}
 .sitem-val{font-size:1rem;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--text-primary);}
-.delete-btn{margin:0.75rem 1.25rem 1rem;display:flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(224,90,90,0.25);border-radius:8px;color:var(--red);font-family:'DM Sans',sans-serif;font-size:0.8rem;padding:6px 12px;cursor:pointer;transition:all 0.2s;width:fit-content;}
+.record-actions{display:flex;gap:8px;margin:0.75rem 1.25rem 1rem;flex-wrap:wrap;}
+.delete-btn{display:flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(224,90,90,0.25);border-radius:8px;color:var(--red);font-family:'DM Sans',sans-serif;font-size:0.8rem;padding:6px 12px;cursor:pointer;transition:all 0.2s;}
 .delete-btn:hover{background:var(--red-bg);border-color:rgba(224,90,90,0.5);}
+.pdf-btn{display:flex;align-items:center;gap:6px;background:rgba(46,196,182,0.08);border:1px solid rgba(46,196,182,0.25);border-radius:8px;color:var(--teal);font-family:'DM Sans',sans-serif;font-size:0.8rem;padding:6px 12px;cursor:pointer;transition:all 0.2s;}
+.pdf-btn:hover{background:rgba(46,196,182,0.14);}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
 @media(max-width:480px){.page-title{font-size:1.4rem;}td,th{padding:0.5rem 0.4rem;}td:first-child,th:first-child{padding-left:0;}}
 </style>
@@ -370,18 +375,148 @@ function render(){
       const nameCell=isMain?LABELS[h]+' <span style="font-size:0.73rem;opacity:0.6">(shared excess)</span>':LABELS[h];
       return '<tr class="'+(isMain?'main-row':'')+(isZero?' zero':'')+'"><td style="'+((!isMain)?'font-weight:500':'')+'">'+nameCell+'</td><td style="font-family:\'JetBrains Mono\',monospace">'+r.cons[h]+' m\u00b3</td><td><span class="pct-badge">'+r.pct[h].toFixed(2)+'%</span></td><td class="amt-strong">'+fmtPhp(r.amts[h])+'</td></tr>';
     }).join('');
+    const BAR_COLORS_H = {waldy:'#f97316', pauline:'#c084fc', nicka:'#6ee7b7', main:'#64748b'};
+    const barHtml=ALL_HH.map(h=>{
+      const barPct=r.grandTotal>0?(r.cons[h]/r.grandTotal*100):0;
+      return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'
+        +'<div style="font-size:12px;color:#7da0bb;width:70px;flex-shrink:0">'+LABELS[h]+'</div>'
+        +'<div style="flex:1;height:7px;background:#152334;border-radius:99px;overflow:hidden">'
+        +'<div style="width:'+barPct.toFixed(2)+'%;height:100%;background:'+BAR_COLORS_H[h]+';border-radius:99px;"></div>'
+        +'</div>'
+        +'<div style="font-size:12px;font-weight:500;color:#e8f0f7;width:52px;text-align:right;font-family:\'JetBrains Mono\',monospace">'+barPct.toFixed(2)+'%</div>'
+        +'</div>';
+    }).join('');
+
     const isManual=r.manual===true;
     const dateDisplay=isManual?fmtDateShortNoTime(r.date):fmtDateShort(r.date);
     card.innerHTML='<div class="record-header" onclick="toggleRecord('+r.id+')"><div class="record-header-left"><div class="record-date">'+fmtDate(r.date)+(isManual?'<span class="manual-tag">manual</span>':'')+'</div><div class="record-meta">'+r.billCbm+' m\u00b3 bill &nbsp;\u00b7&nbsp; '+r.grandTotal+' m\u00b3 total &nbsp;\u00b7&nbsp; '+dateDisplay+'</div></div><div class="record-header-right"><div class="record-total">'+fmtPhp(r.billPhp)+'</div><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg></div></div>'
     +'<div class="household-pills">'+pillsHtml+'</div>'
     +'<div class="record-detail">'
-    +'<div class="detail-section"><div class="detail-label">Bill summary</div><div class="summary-row"><div class="sitem"><div class="sitem-label">Meter total</div><div class="sitem-val">'+r.meterTotal+' m\u00b3</div></div><div class="sitem"><div class="sitem-label">Bill total</div><div class="sitem-val">'+r.billCbm+' m\u00b3</div></div><div class="sitem"><div class="sitem-label">Disparity (Main)</div><div class="sitem-val" style="color:'+(r.mainCons>0?'#fb7185':'var(--text-muted)')+'">'+r.mainCons+' m\u00b3</div></div><div class="sitem"><div class="sitem-label">Bill amount</div><div class="sitem-val" style="color:var(--teal)">'+fmtPhp(r.billPhp)+'</div></div></div></div>'
+    +'<div class="detail-section"><div class="detail-label">Bill summary</div><div class="summary-row"><div class="sitem"><div class="sitem-label">Meter total</div><div class="sitem-val">'+r.meterTotal+' m\u00b3</div></div><div class="sitem"><div class="sitem-label">Bill total</div><div class="sitem-val">'+r.billCbm+' m\u00b3</div></div><div class="sitem"><div class="sitem-label">Disparity (Main)</div><div class="sitem-val" style="color:'+(r.mainCons>0?'#94a3b8':'var(--text-muted)')+'">'+r.mainCons+' m\u00b3</div></div><div class="sitem"><div class="sitem-label">Bill amount</div><div class="sitem-val" style="color:var(--teal)">'+fmtPhp(r.billPhp)+'</div></div></div></div>'
     +'<div class="detail-section"><div class="detail-label">Meter readings</div><table><thead><tr><th>Household</th><th>Last month</th><th>This month</th><th>Usage</th></tr></thead><tbody>'+meterRowsHtml+'</tbody></table></div>'
-    +'<div class="detail-section"><div class="detail-label">Cost breakdown</div><table><thead><tr><th>Household</th><th>m\u00b3</th><th>Share</th><th>Amount due</th></tr></thead><tbody>'+costRowsHtml+'<tr class="total-row"><td>Total</td><td style="font-family:\'JetBrains Mono\',monospace">'+r.grandTotal+' m\u00b3</td><td><span class="pct-badge">100.00%</span></td><td class="amt-strong">'+fmtPhp(r.billPhp)+'</td></tr></tbody></table></div>'
-    +'<button class="delete-btn" onclick="deleteRecord('+r.id+')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14a2,2,0,0,1-2,2H8a2,2,0,0,1-2-2L5,6"/><path d="M10,11v6"/><path d="M14,11v6"/><path d="M9,6V4a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1V6"/></svg>Delete this record</button>'
+    +'<div class="detail-section"><div class="detail-label">Consumption breakdown</div><div style="margin-bottom:12px">'+barHtml+'</div><table><thead><tr><th>Household</th><th>m\u00b3</th><th>Share</th><th>Amount due</th></tr></thead><tbody>'+costRowsHtml+'<tr class="total-row"><td>Total</td><td style="font-family:\'JetBrains Mono\',monospace">'+r.grandTotal+' m\u00b3</td><td><span class="pct-badge">100.00%</span></td><td class="amt-strong">'+fmtPhp(r.billPhp)+'</td></tr></tbody></table></div>'
+    +'<div class="record-actions">'
+    +'<button class="pdf-btn" onclick="savePdf('+r.id+')">'
+    +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="8,6 8,2 16,2 16,6"/><path d="M8 18H6a2 2 0 01-2-2v-5a2 2 0 012-2h12a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="8" y="14" width="8" height="6"/></svg>'
+    +'Save as PDF</button>'
+    +'<button class="delete-btn" onclick="deleteRecord('+r.id+')">'
+    +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14a2,2,0,0,1-2,2H8a2,2,0,0,1-2-2L5,6"/><path d="M10,11v6"/><path d="M14,11v6"/><path d="M9,6V4a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1V6"/></svg>'
+    +'Delete this record</button>'
+    +'</div>'
     +'</div>';
     list.appendChild(card);
   });
+}
+
+function savePdf(id) {
+  const r = loadHistory().find(rec => rec.id === id);
+  if (!r) return;
+  const BAR_COLORS_H = {waldy:'#f97316', pauline:'#c084fc', nicka:'#6ee7b7', main:'#64748b'};
+  const ALL_HH = ['waldy','pauline','nicka','main'];
+  const date = fmtDate(r.date);
+
+  const meterHtml = ['waldy','pauline','nicka'].map(h => {
+    const rd = r.readings[h];
+    return `<tr>
+      <td style="font-weight:500;padding:10px 12px;border-top:1px solid #243d54;color:#e8f0f7">${LABELS[h]}</td>
+      <td style="padding:10px 12px;border-top:1px solid #243d54;font-family:'JetBrains Mono',monospace;color:#e8f0f7">${pad4(rd.prev)}<span style="color:#e05a5a">${rd.prevLast}</span></td>
+      <td style="padding:10px 12px;border-top:1px solid #243d54;font-family:'JetBrains Mono',monospace;color:#e8f0f7">${pad4(rd.curr)}<span style="color:#e05a5a">${rd.currLast}</span></td>
+      <td style="padding:10px 12px;border-top:1px solid #243d54;font-family:'JetBrains Mono',monospace;font-weight:600;color:#2ec4b6">${r.cons[h]} m³</td>
+    </tr>`;
+  }).join('');
+
+  const barHtml = ALL_HH.map(h => {
+    const barPct = r.grandTotal > 0 ? (r.cons[h] / r.grandTotal * 100) : 0;
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <div style="font-size:13px;color:#7da0bb;width:70px;flex-shrink:0">${LABELS[h]}</div>
+      <div style="flex:1;height:8px;background:#152334;border-radius:99px;overflow:hidden">
+        <div style="width:${barPct.toFixed(2)}%;height:100%;background:${BAR_COLORS_H[h]};border-radius:99px;"></div>
+      </div>
+      <div style="font-size:13px;font-weight:500;color:#e8f0f7;width:52px;text-align:right;font-family:'JetBrains Mono',monospace">${barPct.toFixed(2)}%</div>
+    </div>`;
+  }).join('');
+
+  const costHtml = ALL_HH.map(h => {
+    const isMain = h === 'main', isZero = isMain && r.cons[h] === 0;
+    const opacity = isZero ? 'opacity:0.4;' : '';
+    const nameColor = isMain ? 'color:#64748b;font-style:italic;' : 'color:#e8f0f7;font-weight:500;';
+    const amtColor = isMain ? 'color:#64748b;' : 'color:#e05a5a;font-weight:600;';
+    const nameCell = isMain ? `${LABELS[h]} <span style="font-size:0.73rem;opacity:0.6">(shared excess)</span>` : LABELS[h];
+    return `<tr style="${opacity}">
+      <td style="padding:10px 12px;border-top:1px solid #243d54;${nameColor}">${nameCell}</td>
+      <td style="padding:10px 12px;border-top:1px solid #243d54;color:#e8f0f7;font-family:'JetBrains Mono',monospace">${typeof r.cons[h] === 'number' ? (Number.isInteger(r.cons[h]) ? r.cons[h] : r.cons[h].toFixed(2)) : r.cons[h]} m³</td>
+      <td style="padding:10px 12px;border-top:1px solid #243d54"><span style="background:rgba(46,196,182,0.12);color:#2ec4b6;border-radius:5px;padding:2px 8px;font-family:'JetBrains Mono',monospace;font-size:13px">${r.pct[h].toFixed(2)}%</span></td>
+      <td style="padding:10px 12px;border-top:1px solid #243d54;font-family:'JetBrains Mono',monospace;${amtColor}">${fmtPhp(r.amts[h])}</td>
+    </tr>`;
+  }).join('');
+
+  const dispMsg = r.mainCons > 0
+    ? `${r.mainCons} m³ disparity allocated to Main as shared excess.`
+    : r.meterTotal > r.billCbm
+    ? `Meter readings exceeded bill by ${r.meterTotal - r.billCbm} m³. Deducted equally per household.`
+    : 'No disparity — bill matches meter readings.';
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<title>Water Bill — ${date}</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:#0d1b2a;color:#e8f0f7;font-family:'DM Sans',sans-serif;padding:28px 36px;-webkit-print-color-adjust:exact;print-color-adjust:exact;min-height:100vh;display:flex;flex-direction:column;}
+@page{margin:0;size:A4;}
+@media print{html,body{padding:24px 32px;}}
+.card{background:#1a2d40;border:1px solid #243d54;border-radius:14px;margin-bottom:14px;overflow:hidden;}
+.card-inner{padding:1.25rem;}
+.section-label{font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#2ec4b6;margin-bottom:12px;}
+table{width:100%;border-collapse:collapse;}
+th{font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:#4a6b82;padding:0 12px 8px;text-align:left;}
+th:first-child{padding-left:0;}td:first-child{padding-left:0;}
+.pills{display:flex;gap:8px;flex-wrap:wrap;}
+.pill{flex:1;min-width:100px;background:#152334;border:1px solid #243d54;border-radius:10px;padding:10px 12px;}
+.pill-label{font-size:11px;color:#4a6b82;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;}
+.pill-val{font-size:20px;font-weight:600;font-family:'JetBrains Mono',monospace;color:#e8f0f7;}
+.pill-unit{font-size:11px;color:#7da0bb;margin-top:2px;}
+.notice{font-size:13px;padding:9px 13px;border-radius:9px;background:rgba(46,196,182,0.08);border:1px solid rgba(46,196,182,0.25);color:#7ee8e2;margin-bottom:14px;}
+</style></head><body>
+<div class="card" style="text-align:center;position:relative;overflow:hidden;">
+  <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:160px;height:3px;background:linear-gradient(90deg,transparent,#2ec4b6,transparent);"></div>
+  <div class="card-inner" style="padding:1.5rem;">
+    <div style="font-family:'DM Serif Display',serif;font-size:26px;color:#fff;margin-bottom:4px;">Results</div>
+    <div style="font-size:13px;color:#4a6b82;margin-bottom:1rem;">${date}</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:400;color:#2ec4b6;letter-spacing:-0.02em;">${fmtPhp(r.billPhp)}</div>
+    <div style="font-size:11px;color:#4a6b82;letter-spacing:0.08em;text-transform:uppercase;margin-top:4px;">Total bill amount</div>
+  </div>
+</div>
+<div class="pills" style="margin-bottom:14px;">
+  <div class="pill"><div class="pill-label">Meter total</div><div class="pill-val">${r.meterTotal}</div><div class="pill-unit">m³ from readings</div></div>
+  <div class="pill" style="border-color:rgba(46,196,182,0.3)"><div class="pill-label">Bill total</div><div class="pill-val" style="color:#2ec4b6">${r.billCbm}</div><div class="pill-unit">m³ on bill</div></div>
+  <div class="pill" style="${r.mainCons>0?'border-color:rgba(255,191,105,0.3)':''}"><div class="pill-label">Main (excess)</div><div class="pill-val" style="${r.mainCons>0?'color:#ffbf69':''}">${r.mainCons}</div><div class="pill-unit">m³ disparity</div></div>
+</div>
+<div class="notice">${dispMsg}</div>
+<div class="card"><div class="card-inner">
+  <div class="section-label">Meter readings</div>
+  <table><thead><tr><th style="padding-left:0">Household</th><th>Last month</th><th>This month</th><th>Usage</th></tr></thead><tbody>${meterHtml}</tbody></table>
+</div></div>
+<div class="card"><div class="card-inner">
+  <div class="section-label">Consumption breakdown</div>
+  ${barHtml}
+</div>
+<div style="padding:0 1.25rem 1.25rem;">
+  <table><thead><tr><th style="padding-left:0">Household</th><th>m³</th><th>Share</th><th>Amount due</th></tr></thead>
+  <tbody>${costHtml}
+  <tr style="background:rgba(46,196,182,0.06);">
+    <td style="padding:10px 12px;border-top:1px solid rgba(46,196,182,0.25);font-weight:600;color:#fff">Total</td>
+    <td style="padding:10px 12px;border-top:1px solid rgba(46,196,182,0.25);font-weight:600;color:#fff;font-family:'JetBrains Mono',monospace">${r.grandTotal} m³</td>
+    <td style="padding:10px 12px;border-top:1px solid rgba(46,196,182,0.25)"><span style="background:rgba(46,196,182,0.15);color:#2ec4b6;border-radius:5px;padding:2px 8px;font-family:'JetBrains Mono',monospace;font-size:13px">100.00%</span></td>
+    <td style="padding:10px 12px;border-top:1px solid rgba(46,196,182,0.25);font-weight:600;color:#e05a5a;font-family:'JetBrains Mono',monospace">${fmtPhp(r.billPhp)}</td>
+  </tr></tbody></table>
+</div></div>
+<div style="flex:1;"></div>
+</body></html>`);
+  win.document.close();
+  setTimeout(() => win.print(), 600);
 }
 
 HH.forEach(h=>{buildFormMeter('fw-'+h+'-prev');buildFormMeter('fw-'+h+'-curr');});
