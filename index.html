@@ -604,7 +604,7 @@
       <p class="card-hint">Enter all 5 digits per reading. The <span style="color:var(--red);font-weight:500;">last digit</span> is decorative and not counted.</p>
 
       <div class="household" id="hblock-waldy">
-        <div class="household-name">Waldy</div>
+        <div class="household-name">Pending Name</div>
         <div class="meter-row">
           <div class="meter-group">
             <div class="meter-label">Last month</div>
@@ -624,7 +624,7 @@
       </div>
 
       <div class="household" id="hblock-pauline">
-        <div class="household-name">Pauline</div>
+        <div class="household-name">Nadine</div>
         <div class="meter-row">
           <div class="meter-group">
             <div class="meter-label">Last month</div>
@@ -644,7 +644,7 @@
       </div>
 
       <div class="household" id="hblock-nicka">
-        <div class="household-name">Nicka</div>
+        <div class="household-name">Kikay</div>
         <div class="meter-row">
           <div class="meter-group">
             <div class="meter-label">Last month</div>
@@ -764,7 +764,7 @@
 
 <script>
 const HH = ['waldy','pauline','nicka'];
-const LABELS = {waldy:'Waldy', pauline:'Pauline', nicka:'Nicka', main:'Main'};
+const LABELS = {waldy:'Pending Name', pauline:'Nadine', nicka:'Kikay', main:'Main'};
 const BAR_COLORS = {waldy:'#f97316', pauline:'#c084fc', nicka:'#6ee7b7', main:'#64748b'};
 
 function buildMeter(id) {
@@ -870,24 +870,20 @@ function calculate() {
   const billPhp = parseFloat(document.getElementById('bill-php').value);
   const disparity = billCbm - meterTotal;
 
-  // Adjusted consumption used for percentage calculation
   const consAdj = {};
   let mainCons = 0;
   let grandTotal = 0;
 
   if (disparity > 0) {
-    // Bill higher than meters — excess goes to Main
     HH.forEach(h => { consAdj[h] = cons[h]; });
     mainCons = disparity;
     grandTotal = billCbm;
   } else if (disparity < 0) {
-    // Bill lower than meters — deduct equally from each household
     const deductEach = Math.abs(disparity) / HH.length;
     HH.forEach(h => { consAdj[h] = parseFloat((cons[h] - deductEach).toFixed(4)); });
     mainCons = 0;
     grandTotal = billCbm;
   } else {
-    // Perfect match
     HH.forEach(h => { consAdj[h] = cons[h]; });
     mainCons = 0;
     grandTotal = meterTotal;
@@ -896,7 +892,6 @@ function calculate() {
   const allHH = [...HH, 'main'];
   const consAll = {...consAdj, main: mainCons};
 
-  // Percentages (last item absorbs rounding)
   const pct = {};
   let pSum = 0;
   allHH.forEach((h,i) => {
@@ -904,7 +899,6 @@ function calculate() {
     else pct[h] = parseFloat((100-pSum).toFixed(2));
   });
 
-  // Amounts
   const amts = {};
   let aSum = 0;
   allHH.forEach((h,i) => {
@@ -912,11 +906,9 @@ function calculate() {
     else amts[h] = parseFloat((billPhp-aSum).toFixed(2));
   });
 
-  // Report hero
   document.getElementById('rpt-date').textContent = new Date().toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   document.getElementById('rpt-total').textContent = fmtPhp(billPhp);
 
-  // Summary pills
   const sp = document.getElementById('summary-pills');
   sp.innerHTML = `
     <div class="pill"><div class="pill-label">Meter total</div><div class="pill-val">${meterTotal}</div><div class="pill-unit">m³ from readings</div></div>
@@ -924,7 +916,6 @@ function calculate() {
     <div class="pill ${mainCons>0?'warn':''}"><div class="pill-label">Main (excess)</div><div class="pill-val">${mainCons}</div><div class="pill-unit">m³ disparity</div></div>
   `;
 
-  // Notice
   const na = document.getElementById('notice-area');
   if (disparity === 0) {
     na.innerHTML = `<div class="notice-bar info">No disparity — bill matches meter readings. Main household: ₱0.00 (0.00%).</div>`;
@@ -935,7 +926,6 @@ function calculate() {
     na.innerHTML = `<div class="notice-bar info">${mainCons} m³ disparity is allocated to Main as shared excess.</div>`;
   }
 
-  // Meter table — always show raw readings, note adjusted if needed
   const mTb = document.getElementById('meter-tbody');
   mTb.innerHTML = '';
   HH.forEach(h => {
@@ -950,7 +940,6 @@ function calculate() {
     mTb.appendChild(tr);
   });
 
-  // Bar chart
   const bc = document.getElementById('bar-chart');
   bc.innerHTML = '';
   allHH.forEach(h => {
@@ -966,7 +955,6 @@ function calculate() {
     setTimeout(() => { row.querySelector('.bar-fill').style.width = barPct + '%'; }, 50);
   });
 
-  // Cost table
   const cTb = document.getElementById('cost-tbody');
   cTb.innerHTML = '';
   allHH.forEach(h => {
@@ -979,7 +967,7 @@ function calculate() {
       ? `${consAll[h].toFixed(2)} m³`
       : `${consAll[h]} m³`;
     tr.innerHTML = `
-      <td style="${!isMain?'font-weight:500':''};">${nameCell}</td>
+      <td style="${!isMain?'font-weight:500':''};"> ${nameCell}</td>
       <td style="font-family:'JetBrains Mono',monospace">${cbmDisplay}</td>
       <td><span class="pct-badge">${fmtPct(pct[h])}</span></td>
       <td class="amount-strong">${fmtPhp(amts[h])}</td>
@@ -991,7 +979,6 @@ function calculate() {
   totTr.innerHTML = `<td>Total</td><td style="font-family:'JetBrains Mono',monospace">${billCbm} m³</td><td><span class="pct-badge">100.00%</span></td><td class="amount-strong">${fmtPhp(billPhp)}</td>`;
   cTb.appendChild(totTr);
 
-  // Save to history
   saveToHistory({
     id: Date.now(),
     date: new Date().toISOString(),
@@ -1038,7 +1025,6 @@ function saveAsImage() {
   btn.disabled = true;
   btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg> Opening...`;
 
-  // Collect rendered data from the live DOM
   const date = document.getElementById('rpt-date').textContent;
   const total = document.getElementById('rpt-total').textContent;
   const pillsEl = document.getElementById('summary-pills');
