@@ -152,7 +152,7 @@ tr.main-row .amt-strong{color:#64748b;font-weight:500;}
   <div class="form-section">
     <div class="form-section-label">Meter readings</div>
     <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:1rem;">Enter all 5 digits. The <span style="color:var(--red)">last digit</span> is not counted.</p>
-    <div class="hh-block"><div class="hh-name">Waldy</div>
+    <div class="hh-block"><div class="hh-name">Pending Name</div>
       <div class="meter-row">
         <div class="meter-group"><div class="meter-lbl">Last month</div><div class="meter-wrap" id="fw-waldy-prev"></div></div>
         <div class="meter-group"><div class="meter-lbl">This month</div><div class="meter-wrap" id="fw-waldy-curr"></div></div>
@@ -160,7 +160,7 @@ tr.main-row .amt-strong{color:#64748b;font-weight:500;}
       </div>
       <div class="err-msg" id="fe-waldy">This month must be greater than last month.</div>
     </div>
-    <div class="hh-block"><div class="hh-name">Pauline</div>
+    <div class="hh-block"><div class="hh-name">Nadine</div>
       <div class="meter-row">
         <div class="meter-group"><div class="meter-lbl">Last month</div><div class="meter-wrap" id="fw-pauline-prev"></div></div>
         <div class="meter-group"><div class="meter-lbl">This month</div><div class="meter-wrap" id="fw-pauline-curr"></div></div>
@@ -168,7 +168,7 @@ tr.main-row .amt-strong{color:#64748b;font-weight:500;}
       </div>
       <div class="err-msg" id="fe-pauline">This month must be greater than last month.</div>
     </div>
-    <div class="hh-block"><div class="hh-name">Nicka</div>
+    <div class="hh-block"><div class="hh-name">Kikay</div>
       <div class="meter-row">
         <div class="meter-group"><div class="meter-lbl">Last month</div><div class="meter-wrap" id="fw-nicka-prev"></div></div>
         <div class="meter-group"><div class="meter-lbl">This month</div><div class="meter-wrap" id="fw-nicka-curr"></div></div>
@@ -197,9 +197,9 @@ tr.main-row .amt-strong{color:#64748b;font-weight:500;}
 <script>
 const HH=['waldy','pauline','nicka'];
 const ALL_HH=['waldy','pauline','nicka','main'];
-const LABELS={waldy:'Waldy',pauline:'Pauline',nicka:'Nicka',main:'Main'};
+const LABELS={waldy:'Pending Name',pauline:'Nadine',nicka:'Kikay',main:'Main'};
 
-function fmtPhp(n){return '\u20b1'+n.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtPhp(n){return '₱'+n.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtDate(iso){return new Date(iso).toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});}
 function fmtDateShort(iso){return new Date(iso).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}
 function fmtDateShortNoTime(iso){return new Date(iso).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'});}
@@ -272,8 +272,8 @@ function onFormChange(){
   HH.forEach(h=>{
     const prev=getFormMeter('fw-'+h+'-prev'),curr=getFormMeter('fw-'+h+'-curr');
     const el=document.getElementById('fc-'+h),err=document.getElementById('fe-'+h);
-    if(prev===null||curr===null){el.textContent='\u2014';el.className='cons-val dash';err.style.display='none';}
-    else if(curr<prev){el.textContent='\u2014';el.className='cons-val dash';err.style.display='block';}
+    if(prev===null||curr===null){el.textContent='—';el.className='cons-val dash';err.style.display='none';}
+    else if(curr<prev){el.textContent='—';el.className='cons-val dash';err.style.display='block';}
     else{el.textContent=curr-prev;el.className='cons-val';err.style.display='none';}
   });
   validateForm();
@@ -301,7 +301,7 @@ function hideForm(){
   document.getElementById('add-btn').style.display='flex';
   HH.forEach(h=>{
     ['prev','curr'].forEach(t=>{document.getElementById('fw-'+h+'-'+t).querySelectorAll('.digit').forEach(d=>d.value='');});
-    const el=document.getElementById('fc-'+h);el.textContent='\u2014';el.className='cons-val dash';
+    const el=document.getElementById('fc-'+h);el.textContent='—';el.className='cons-val dash';
     document.getElementById('fe-'+h).style.display='none';
   });
   document.getElementById('fe-cbm').value='';
@@ -368,12 +368,12 @@ function render(){
     }).join('');
     const meterRowsHtml=['waldy','pauline','nicka'].map(h=>{
       const rd=r.readings[h];
-      return '<tr><td style="font-weight:500">'+LABELS[h]+'</td><td><span style="font-family:\'JetBrains Mono\',monospace">'+pad4(rd.prev)+'<span style="color:#e05a5a">'+rd.prevLast+'</span></span></td><td><span style="font-family:\'JetBrains Mono\',monospace">'+pad4(rd.curr)+'<span style="color:#e05a5a">'+rd.currLast+'</span></span></td><td style="font-family:\'JetBrains Mono\',monospace;font-weight:600;color:#2ec4b6">'+r.cons[h]+' m\u00b3</td></tr>';
+      return '<tr><td style="font-weight:500">'+LABELS[h]+'</td><td><span style="font-family:\'JetBrains Mono\',monospace">'+pad4(rd.prev)+'<span style="color:#e05a5a">'+rd.prevLast+'</span></span></td><td><span style="font-family:\'JetBrains Mono\',monospace">'+pad4(rd.curr)+'<span style="color:#e05a5a">'+rd.currLast+'</span></span></td><td style="font-family:\'JetBrains Mono\',monospace;font-weight:600;color:#2ec4b6">'+r.cons[h]+' m³</td></tr>';
     }).join('');
     const costRowsHtml=ALL_HH.map(h=>{
       const isMain=h==='main',isZero=isMain&&r.cons[h]===0;
       const nameCell=isMain?LABELS[h]+' <span style="font-size:0.73rem;opacity:0.6">(shared excess)</span>':LABELS[h];
-      return '<tr class="'+(isMain?'main-row':'')+(isZero?' zero':'')+'"><td style="'+((!isMain)?'font-weight:500':'')+'">'+nameCell+'</td><td style="font-family:\'JetBrains Mono\',monospace">'+r.cons[h]+' m\u00b3</td><td><span class="pct-badge">'+r.pct[h].toFixed(2)+'%</span></td><td class="amt-strong">'+fmtPhp(r.amts[h])+'</td></tr>';
+      return '<tr class="'+(isMain?'main-row':'')+(isZero?' zero':'')+'"><td style="'+((!isMain)?'font-weight:500':'')+'">'+nameCell+'</td><td style="font-family:\'JetBrains Mono\',monospace">'+r.cons[h]+' m³</td><td><span class="pct-badge">'+r.pct[h].toFixed(2)+'%</span></td><td class="amt-strong">'+fmtPhp(r.amts[h])+'</td></tr>';
     }).join('');
     const BAR_COLORS_H = {waldy:'#f97316', pauline:'#c084fc', nicka:'#6ee7b7', main:'#64748b'};
     const barHtml=ALL_HH.map(h=>{
@@ -389,17 +389,17 @@ function render(){
 
     const isManual=r.manual===true;
     const dateDisplay=isManual?fmtDateShortNoTime(r.date):fmtDateShort(r.date);
-    card.innerHTML='<div class="record-header" onclick="toggleRecord('+r.id+')"><div class="record-header-left"><div class="record-date">'+fmtDate(r.date)+(isManual?'<span class="manual-tag">manual</span>':'')+'</div><div class="record-meta">'+r.billCbm+' m\u00b3 bill &nbsp;\u00b7&nbsp; '+r.grandTotal+' m\u00b3 total &nbsp;\u00b7&nbsp; '+dateDisplay+'</div></div><div class="record-header-right"><div class="record-total">'+fmtPhp(r.billPhp)+'</div><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg></div></div>'
+    card.innerHTML='<div class="record-header" onclick="toggleRecord('+r.id+')"><div class="record-header-left"><div class="record-date">'+fmtDate(r.date)+(isManual?'<span class="manual-tag">manual</span>':'')+'</div><div class="record-meta">'+r.billCbm+' m³ bill &nbsp;·&nbsp; '+r.grandTotal+' m³ total &nbsp;·&nbsp; '+dateDisplay+'</div></div><div class="record-header-right"><div class="record-total">'+fmtPhp(r.billPhp)+'</div><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg></div></div>'
     +'<div class="household-pills">'+pillsHtml+'</div>'
     +'<div class="record-detail">'
-    +'<div class="detail-section"><div class="detail-label">Bill summary</div><div class="summary-row"><div class="sitem"><div class="sitem-label">Meter total</div><div class="sitem-val">'+r.meterTotal+' m\u00b3</div></div><div class="sitem"><div class="sitem-label">Bill total</div><div class="sitem-val">'+r.billCbm+' m\u00b3</div></div><div class="sitem"><div class="sitem-label">Disparity (Main)</div><div class="sitem-val" style="color:'+(r.mainCons>0?'#94a3b8':'var(--text-muted)')+'">'+r.mainCons+' m\u00b3</div></div><div class="sitem"><div class="sitem-label">Bill amount</div><div class="sitem-val" style="color:var(--teal)">'+fmtPhp(r.billPhp)+'</div></div></div></div>'
+    +'<div class="detail-section"><div class="detail-label">Bill summary</div><div class="summary-row"><div class="sitem"><div class="sitem-label">Meter total</div><div class="sitem-val">'+r.meterTotal+' m³</div></div><div class="sitem"><div class="sitem-label">Bill total</div><div class="sitem-val">'+r.billCbm+' m³</div></div><div class="sitem"><div class="sitem-label">Disparity (Main)</div><div class="sitem-val" style="color:'+(r.mainCons>0?'#94a3b8':'var(--text-muted)')+'">'+r.mainCons+' m³</div></div><div class="sitem"><div class="sitem-label">Bill amount</div><div class="sitem-val" style="color:var(--teal)">'+fmtPhp(r.billPhp)+'</div></div></div></div>'
     +'<div class="detail-section"><div class="detail-label">Meter readings</div><table><thead><tr><th>Household</th><th>Last month</th><th>This month</th><th>Usage</th></tr></thead><tbody>'+meterRowsHtml+'</tbody></table></div>'
-    +'<div class="detail-section"><div class="detail-label">Consumption breakdown</div><div style="margin-bottom:12px">'+barHtml+'</div><table><thead><tr><th>Household</th><th>m\u00b3</th><th>Share</th><th>Amount due</th></tr></thead><tbody>'+costRowsHtml+'<tr class="total-row"><td>Total</td><td style="font-family:\'JetBrains Mono\',monospace">'+r.grandTotal+' m\u00b3</td><td><span class="pct-badge">100.00%</span></td><td class="amt-strong">'+fmtPhp(r.billPhp)+'</td></tr></tbody></table></div>'
+    +'<div class="detail-section"><div class="detail-label">Consumption breakdown</div><div style="margin-bottom:12px">'+barHtml+'</div><table><thead><tr><th>Household</th><th>m³</th><th>Share</th><th>Amount due</th></tr></thead><tbody>'+costRowsHtml+'<tr class="total-row"><td>Total</td><td style="font-family:\'JetBrains Mono\',monospace">'+r.grandTotal+' m³</td><td><span class="pct-badge">100.00%</span></td><td class="amt-strong">'+fmtPhp(r.billPhp)+'</td></tr></tbody></table></div>'
     +'<div class="record-actions">'
-    +'<button class="pdf-btn" onclick="savePdf('+r.id+')">'
+    +'<button class="pdf-btn" onclick="savePdf('+r.id+')">'  
     +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="8,6 8,2 16,2 16,6"/><path d="M8 18H6a2 2 0 01-2-2v-5a2 2 0 012-2h12a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="8" y="14" width="8" height="6"/></svg>'
     +'Save as PDF</button>'
-    +'<button class="delete-btn" onclick="deleteRecord('+r.id+')">'
+    +'<button class="delete-btn" onclick="deleteRecord('+r.id+')">'  
     +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14a2,2,0,0,1-2,2H8a2,2,0,0,1-2-2L5,6"/><path d="M10,11v6"/><path d="M14,11v6"/><path d="M9,6V4a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1V6"/></svg>'
     +'Delete this record</button>'
     +'</div>'
@@ -492,7 +492,7 @@ th:first-child{padding-left:0;}td:first-child{padding-left:0;}
 <div class="pills" style="margin-bottom:14px;">
   <div class="pill"><div class="pill-label">Meter total</div><div class="pill-val">${r.meterTotal}</div><div class="pill-unit">m³ from readings</div></div>
   <div class="pill" style="border-color:rgba(46,196,182,0.3)"><div class="pill-label">Bill total</div><div class="pill-val" style="color:#2ec4b6">${r.billCbm}</div><div class="pill-unit">m³ on bill</div></div>
-  <div class="pill" style="${r.mainCons>0?'border-color:rgba(255,191,105,0.3)':''}"><div class="pill-label">Main (excess)</div><div class="pill-val" style="${r.mainCons>0?'color:#ffbf69':''}">${r.mainCons}</div><div class="pill-unit">m³ disparity</div></div>
+  <div class="pill" style="${r.mainCons>0?'border-color:rgba(255,191,105,0.3)':''}"><div class="pill-label">Main (excess)</div><div class="pill-val" style="${r.mainCons>0?'color:#ffbf69':'}">${r.mainCons}</div><div class="pill-unit">m³ disparity</div></div>
 </div>
 <div class="notice">${dispMsg}</div>
 <div class="card"><div class="card-inner">
